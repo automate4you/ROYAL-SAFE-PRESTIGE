@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Royal Safe Prestige — Réservation</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('_hDiGIlM_QFA3-7-W');</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f7f5f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; font-family: 'DM Sans', sans-serif; }
+.page { width: 100%; max-width: 580px; }
+.header { text-align: center; margin-bottom: 2.5rem; }
+.ornament { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 1.25rem; }
+.ornament-line { width: 40px; height: 0.5px; background: #b8985a; }
+.ornament-shape { display: flex; align-items: center; gap: 5px; }
+.diamond-sm { width: 5px; height: 5px; background: #b8985a; transform: rotate(45deg); }
+.diamond-lg { width: 8px; height: 8px; border: 1px solid #b8985a; transform: rotate(45deg); }
+.brand-label { font-size: 10px; font-weight: 400; letter-spacing: 0.4em; text-transform: uppercase; color: #b8985a; margin-bottom: 0.75rem; }
+h1 { font-family: 'Playfair Display', serif; font-variant-numeric: lining-nums tabular-nums; font-size: 36px; font-weight: 300; color: #1a1814; letter-spacing: 0.08em; line-height: 1.15; text-transform: uppercase; }
+h1 .gold { color: #b8985a; font-style: normal; }
+.card { background: #fff; border: 0.5px solid #e8e3d8; }
+.card-top-accent { height: 2px; background: linear-gradient(90deg, #c9a96e 0%, #e8d5a3 50%, #c9a96e 100%); }
+.card-body { padding: 2.5rem 2.5rem 2rem; }
+.field-group { margin-bottom: 1.75rem; }
+.field-label { display: block; font-size: 9px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: #b8985a; margin-bottom: 8px; }
+.radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.radio-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.radio-opt input { display: none; }
+.radio-face { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 10px; border: 0.5px solid #ddd8cc; background: #faf9f6; cursor: pointer; transition: all 0.18s; font-size: 12px; font-weight: 400; color: #8a8070; letter-spacing: 0.02em; user-select: none; text-align: center; line-height: 1.3; }
+.radio-face:hover { border-color: #c9a96e; color: #1a1814; }
+.radio-pip { width: 6px; height: 6px; border-radius: 50%; border: 1px solid #c9c0ac; flex-shrink: 0; transition: all 0.18s; }
+.radio-opt input:checked + .radio-face { border-color: #b8985a; background: #fff; color: #1a1814; font-weight: 500; }
+.radio-opt input:checked + .radio-face .radio-pip { background: #b8985a; border-color: #b8985a; box-shadow: 0 0 0 2px #f7f1e5; }
+.text-input { width: 100%; background: #faf9f6; border: 0.5px solid #ddd8cc; padding: 13px 16px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 300; color: #1a1814; outline: none; transition: border-color 0.18s; border-radius: 0; -webkit-appearance: none; }
+.text-input::placeholder { color: #c5bfb2; }
+.text-input:focus { border-color: #b8985a; background: #fff; }
+.route-stack { display: flex; flex-direction: column; }
+.route-item { position: relative; }
+.route-dot { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); z-index: 1; pointer-events: none; }
+.dot-filled { width: 7px; height: 7px; background: #b8985a; border-radius: 50%; }
+.dot-empty { width: 7px; height: 7px; border: 1.5px solid #c5bfb2; border-radius: 50%; background: #fff; }
+.route-item .text-input { padding-left: 34px; }
+.route-sep { display: flex; align-items: center; padding: 0 16px; height: 14px; }
+.route-sep-line { width: 0.5px; height: 100%; background: #ddd8cc; margin-left: 3px; }
+.autocomplete-wrap { position: relative; }
+.suggestions { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: #fff; border: 0.5px solid #c9a96e; border-top: none; z-index: 999; display: none; box-shadow: 0 4px 16px rgba(26,24,20,0.08); }
+.suggestions.open { display: block; }
+.sug-section-label { padding: 5px 16px; font-size: 8px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: #c9a96e; background: #fdfaf4; border-bottom: 0.5px solid #f0ece3; }
+.suggestion-item { padding: 9px 16px; cursor: pointer; border-bottom: 0.5px solid #f0ece3; transition: background 0.12s; }
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover, .suggestion-item.active { background: #faf7f0; }
+.suggestion-item.is-poi { background: #fdfaf4; }
+.suggestion-item.is-poi:hover { background: #f7f0e4; }
+.sug-main { font-size: 13px; font-weight: 400; color: #1a1814; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.sug-sub { font-size: 11px; color: #b5afa4; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sug-badge { font-size: 8px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #b8985a; border: 0.5px solid #e8d5a3; padding: 1px 5px; flex-shrink: 0; }
+.loading-dots { padding: 10px 16px; font-size: 12px; color: #c5bfb2; letter-spacing: 0.1em; }
+.slide-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.32s ease; }
+.slide-wrap.open { grid-template-rows: 1fr; }
+.slide-inner { overflow: visible; min-height: 0; }
+.slide-wrap:not(.open) .slide-inner { opacity: 0; pointer-events: none; }
+.slide-wrap.open .slide-inner { opacity: 1; transition: opacity 0.2s ease 0.1s; }
+.date-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; }
+.picker-input { cursor: pointer; }
+.stepper-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stepper-group { display: flex; flex-direction: column; gap: 6px; }
+.stepper { display: flex; align-items: center; border: 0.5px solid #ddd8cc; background: #faf9f6; }
+.stepper-btn { background: none; border: none; width: 40px; height: 46px; font-size: 18px; color: #b8985a; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stepper-btn:hover { background: #faf7f0; }
+.stepper-btn:disabled { color: #d0ccc4; cursor: default; }
+.stepper-val { flex: 1; text-align: center; font-family: 'Playfair Display', serif; font-variant-numeric: lining-nums tabular-nums; font-size: 22px; font-weight: 300; color: #1a1814; }
+.picker-dropdown { position: fixed; background: #fff; border: 0.5px solid #e8e3d8; box-shadow: 0 8px 32px rgba(26,24,20,0.12); z-index: 9999; display: none; width: 260px; }
+.picker-dropdown.open { display: block; }
+.cal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 10px; border-bottom: 0.5px solid #f0ece3; }
+.cal-nav { background: none; border: none; cursor: pointer; color: #b8985a; font-size: 16px; padding: 2px 6px; line-height: 1; }
+.cal-nav:hover { color: #1a1814; }
+.cal-month-label { font-family: 'Playfair Display', serif; font-variant-numeric: lining-nums tabular-nums; font-size: 15px; font-weight: 400; color: #1a1814; letter-spacing: 0.05em; }
+.cal-grid { padding: 10px 12px 12px; }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7,1fr); margin-bottom: 6px; }
+.cal-wd { text-align: center; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #b5afa4; padding: 4px 0; font-weight: 500; }
+.cal-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+.cal-day { text-align: center; padding: 6px 2px; font-size: 13px; font-weight: 300; color: #1a1814; cursor: pointer; border-radius: 1px; transition: background 0.12s, color 0.12s; }
+.cal-day:hover { background: #faf7f0; color: #b8985a; }
+.cal-day.empty { cursor: default; }
+.cal-day.today { color: #b8985a; font-weight: 500; }
+.cal-day.selected { background: #b8985a; color: #fff; }
+.cal-day.past { color: #d0ccc4; cursor: default; pointer-events: none; }
+.time-picker-inner { padding: 14px 12px; }
+.time-display { text-align: center; margin-bottom: 14px; }
+.time-display-val { font-family: 'Playfair Display', serif; font-variant-numeric: lining-nums tabular-nums; font-size: 36px; font-weight: 300; color: #1a1814; letter-spacing: 0.05em; }
+.time-cols { display: flex; align-items: flex-start; gap: 4px; }
+.time-col-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.time-col-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: #b5afa4; margin-bottom: 6px; font-weight: 500; }
+.time-col { width: 100%; display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #e8e3d8 transparent; }
+.time-col::-webkit-scrollbar { width: 3px; }
+.time-col::-webkit-scrollbar-thumb { background: #e8e3d8; border-radius: 2px; }
+.time-item { width: 100%; text-align: center; padding: 9px 4px; font-size: 14px; font-weight: 300; color: #8a8070; cursor: pointer; border-radius: 1px; transition: background 0.1s, color 0.1s; }
+.time-item:hover { background: #faf7f0; color: #b8985a; }
+.time-item.selected { background: #b8985a; color: #fff; font-weight: 400; }
+.time-sep { display: flex; align-items: center; justify-content: center; font-size: 22px; color: #d0ccc4; padding-top: 22px; flex-shrink: 0; }
+.time-confirm { width: 100%; margin-top: 12px; padding: 10px; background: #1a1814; border: none; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 9px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; cursor: pointer; }
+.time-confirm:hover { background: #2d2820; }
+.duration-row { position: relative; }
+.duration-row .text-input { padding-left: 34px; }
+.clock-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+textarea.text-input { resize: none; line-height: 1.7; }
+.text-input.field-error { border-color: #c0392b !important; background: #fdf5f5 !important; }
+.text-input.field-error::placeholder { color: #d4a0a0; }
+.picker-input.field-error { border-color: #c0392b !important; background: #fdf5f5 !important; color: #c0392b; }
+.extras-hint { font-size: 11px; color: #b5afa4; margin-top: 6px; font-weight: 300; }
+.required::after { content: ' *'; color: #b8985a; }
+.client-greeting {
+  display: none;
+  font-size: 16px; font-weight: 300; color: #6b6760;
+  letter-spacing: 0.04em; margin-top: 8px;
+}
+.divider-ornament { display: flex; align-items: center; gap: 12px; margin: 2rem 0; }
+.div-line { flex: 1; height: 0.5px; background: #eae5db; }
+.div-diamond { width: 4px; height: 4px; background: #c9a96e; transform: rotate(45deg); flex-shrink: 0; }
+.submit { width: 100%; padding: 16px; background: #1a1814; border: none; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; position: relative; overflow: hidden; }
+.submit::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #c9a96e, #e8d5a3, #c9a96e); }
+.submit:hover { background: #2d2820; }
+.submit:disabled { background: #8a8070; cursor: not-allowed; }
+.footer-note { text-align: center; margin-top: 1.5rem; font-size: 11px; color: #b5afa4; letter-spacing: 0.06em; }
+.confirm-screen { display: none; flex-direction: column; align-items: center; text-align: center; }
+.confirm-screen.visible { display: flex; }
+.confirm-card { background: #fff; border: 0.5px solid #e8e3d8; width: 100%; overflow: hidden; }
+.confirm-top { height: 2px; background: linear-gradient(90deg, #c9a96e 0%, #e8d5a3 50%, #c9a96e 100%); }
+.confirm-body { padding: 3rem 2.5rem; }
+.confirm-icon { width: 64px; height: 64px; border: 1px solid #c9a96e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.75rem; position: relative; }
+.confirm-icon::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: #fdf9f2; }
+.confirm-check { position: relative; z-index: 1; width: 22px; height: 22px; }
+.confirm-ornament { margin-bottom: 1.5rem; }
+.confirm-title { font-family: 'Playfair Display', serif; font-variant-numeric: lining-nums tabular-nums; font-size: 30px; font-weight: 300; color: #1a1814; letter-spacing: 0.04em; line-height: 1.2; margin-bottom: 1rem; }
+.confirm-title em { color: #b8985a; font-style: normal; }
+.confirm-message { font-size: 14px; font-weight: 300; color: #6b6760; line-height: 1.8; max-width: 420px; margin: 0 auto 2rem; }
+.confirm-divider { display: flex; align-items: center; gap: 12px; margin: 1.75rem 0; }
+.confirm-recap { background: #faf9f6; border: 0.5px solid #e8e3d8; padding: 1.25rem 1.5rem; text-align: left; margin-bottom: 2rem; }
+.recap-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 6px 0; border-bottom: 0.5px solid #f0ece3; font-size: 12px; }
+.recap-row:last-child { border-bottom: none; }
+.recap-label { color: #b5afa4; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; font-size: 9px; flex-shrink: 0; }
+.recap-value { color: #1a1814; font-weight: 300; text-align: right; }
+.confirm-new-btn { width: 100%; padding: 14px; background: transparent; border: 0.5px solid #1a1814; color: #1a1814; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+.confirm-new-btn:hover { background: #1a1814; color: #fff; }
+.confirm-footer { margin-top: 1.5rem; font-size: 11px; color: #b5afa4; letter-spacing: 0.05em; }
+.toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #1a1814; color: #fff; padding: 12px 24px; font-size: 12px; letter-spacing: 0.1em; z-index: 99999; opacity: 0; transition: opacity 0.3s; pointer-events: none; border-bottom: 2px solid #c9a96e; white-space: nowrap; }
+.toast.show { opacity: 1; }
+.toast.error { border-bottom-color: #c0392b; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  body { padding: 1.5rem 0.75rem; align-items: flex-start; }
+  h1 { font-size: 28px; letter-spacing: 0.05em; }
+  .brand-label { font-size: 9px; letter-spacing: 0.3em; }
+  .card-body { padding: 1.75rem 1.25rem 1.5rem; }
+  .confirm-body { padding: 2rem 1.25rem; }
+  .field-group { margin-bottom: 1.4rem; }
+  .header { margin-bottom: 1.75rem; }
+  .ornament-line { width: 28px; }
+  .radio-grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .radio-face { padding: 11px 6px; font-size: 11px; gap: 5px; }
+  .radio-pip { width: 5px; height: 5px; }
+  .stepper-row { gap: 8px; }
+  .stepper-btn { width: 36px; height: 44px; font-size: 17px; }
+  .stepper-val { font-size: 20px; }
+  .date-row { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .text-input { padding: 12px 14px; font-size: 14px; }
+  .route-item .text-input { padding-left: 32px; }
+  .duration-row .text-input { padding-left: 32px; }
+  .toast { left: 1rem; right: 1rem; transform: none; white-space: normal; text-align: center; }
+  .confirm-recap { padding: 1rem; }
+  .recap-row { flex-direction: column; gap: 2px; }
+  .recap-label { font-size: 8px; }
+  .recap-value { text-align: left; font-size: 12px; }
+  /* Dropdowns en bottom sheet sur mobile */
+  .picker-dropdown {
+    position: fixed !important;
+    left: 0 !important; right: 0 !important;
+    width: 100% !important;
+    top: auto !important; bottom: 0 !important;
+    border-left: none; border-right: none; border-bottom: none;
+    border-top: 2px solid #c9a96e;
+    border-radius: 0;
+    box-shadow: 0 -8px 40px rgba(26,24,20,0.18);
+    max-height: 80vh; overflow-y: auto;
+  }
+  .time-col { max-height: 200px; }
+  .time-display-val { font-size: 32px; }
+  .time-picker-inner { padding: 16px; }
+  .cal-grid { padding: 12px 16px 16px; }
+  .cal-day { padding: 8px 2px; font-size: 14px; }
+}
+
+@media (max-width: 380px) {
+  body { padding: 1rem 0.5rem; }
+  h1 { font-size: 22px; }
+  .card-body { padding: 1.25rem 1rem; }
+  .confirm-body { padding: 1.5rem 1rem; }
+  /* Véhicules en colonne unique sur très petit écran */
+  .radio-grid-3 { grid-template-columns: 1fr; gap: 6px; }
+  .radio-face { padding: 11px 12px; justify-content: flex-start; }
+  .field-label { font-size: 8px; letter-spacing: 0.2em; }
+  .confirm-title { font-size: 22px; }
+  .confirm-message { font-size: 13px; }
+  .stepper-btn { width: 44px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <p class="brand-label">Réservation</p>
+    <div class="ornament">
+      <div class="ornament-line"></div>
+      <div class="ornament-shape"><div class="diamond-sm"></div><div class="diamond-lg"></div><div class="diamond-sm"></div></div>
+      <div class="ornament-line"></div>
+    </div>
+    <h1>Royal <span class="gold">Safe</span> Prestige</h1>
+    <p class="client-greeting" id="client-greeting"></p>
+  </div>
+
+  <div id="form-view">
+    <div class="card">
+      <div class="card-top-accent"></div>
+      <div class="card-body">
+
+        <div class="field-group">
+          <label class="field-label required">Type de prestation</label>
+          <div class="radio-grid">
+            <label class="radio-opt"><input type="radio" name="prestation" value="Transfert simple" checked><span class="radio-face"><span class="radio-pip"></span>Transfert simple</span></label>
+            <label class="radio-opt"><input type="radio" name="prestation" value="Mise à disposition"><span class="radio-face"><span class="radio-pip"></span>Mise à disposition</span></label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label required">Véhicule</label>
+          <div class="radio-grid-3">
+            <label class="radio-opt"><input type="radio" name="vehicule" value="Mercedes Classe E" checked><span class="radio-face"><span class="radio-pip"></span>Classe E</span></label>
+            <label class="radio-opt"><input type="radio" name="vehicule" value="Mercedes Classe S"><span class="radio-face"><span class="radio-pip"></span>Classe S</span></label>
+            <label class="radio-opt"><input type="radio" name="vehicule" value="Mercedes Classe V"><span class="radio-face"><span class="radio-pip"></span>Classe V</span></label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="stepper-row">
+            <div class="stepper-group">
+              <span class="field-label required" style="margin-bottom:0;">Véhicules</span>
+              <div class="stepper">
+                <button class="stepper-btn" id="btn-minus-v" onclick="changeCount('vehicle',-1)" disabled>−</button>
+                <div class="stepper-val" id="vehicle-count">1</div>
+                <button class="stepper-btn" id="btn-plus-v" onclick="changeCount('vehicle',1)">+</button>
+              </div>
+            </div>
+            <div class="stepper-group">
+              <span class="field-label required" style="margin-bottom:0;">Passagers</span>
+              <div class="stepper">
+                <button class="stepper-btn" id="btn-minus-p" onclick="changeCount('passenger',-1)" disabled>−</button>
+                <div class="stepper-val" id="passenger-count">1</div>
+                <button class="stepper-btn" id="btn-plus-p" onclick="changeCount('passenger',1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label required">Itinéraire</label>
+          <div class="route-stack">
+            <div class="route-item autocomplete-wrap" id="wrap-depart">
+              <div class="route-dot"><div class="dot-filled"></div></div>
+              <input class="text-input" type="text" id="input-depart" placeholder="Adresse, gare, aéroport de départ" autocomplete="off">
+              <div class="suggestions" id="sug-depart"></div>
+            </div>
+            <div class="slide-wrap" id="slide-duree">
+              <div class="slide-inner">
+                <div class="route-sep"><div class="route-sep-line"></div></div>
+                <div class="duration-row" id="wrap-duree">
+                  <div class="clock-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#c5bfb2" stroke-width="1"/><path d="M7 4v3.5l2 1.5" stroke="#c5bfb2" stroke-width="1" stroke-linecap="round"/></svg></div>
+                  <input class="text-input picker-input" type="text" id="input-duree" placeholder="Durée de la mise à disposition" readonly>
+                </div>
+              </div>
+            </div>
+            <div class="slide-wrap open" id="slide-arrivee">
+              <div class="slide-inner">
+                <div class="route-sep"><div class="route-sep-line"></div></div>
+                <div class="route-item autocomplete-wrap" id="wrap-arrivee">
+                  <div class="route-dot"><div class="dot-empty"></div></div>
+                  <input class="text-input" type="text" id="input-arrivee" placeholder="Adresse, gare, aéroport d'arrivée" autocomplete="off">
+                  <div class="suggestions" id="sug-arrivee"></div>
+                </div>
+              </div>
+            </div>
+            <div class="slide-wrap" id="slide-vol">
+              <div class="slide-inner">
+                <div class="route-sep"><div class="route-sep-line"></div></div>
+                <div class="route-item" style="position:relative;">
+                  <div class="route-dot"><svg width="7" height="7" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 4.5H13l-3.75 2.75 1.5 4.5L7 10l-3.75 2.75 1.5-4.5L1 5.5h4.5z" fill="#c9a96e"/></svg></div>
+                  <input class="text-input" type="text" id="input-vol" placeholder="Numéro de vol ou de train" style="padding-left:34px;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label required">Date & heure de la course</label>
+          <div class="date-row">
+            <div id="wrap-date"><input class="text-input picker-input" type="text" id="input-date" placeholder="Sélectionner une date" readonly></div>
+            <div id="wrap-time"><input class="text-input picker-input" type="text" id="input-time" placeholder="Heure" readonly></div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label required">Coordonnées du passager</label>
+          <textarea class="text-input" id="input-coords" rows="3" placeholder="Nom, prénom, téléphone, email…" style="min-height:80px;max-height:140px;"></textarea>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Extras & demandes spéciales</label>
+          <textarea class="text-input" id="input-extras" rows="3" placeholder="Siège enfant, accueil avec pancarte, bagages supplémentaires…" style="min-height:80px;"></textarea>
+          <p class="extras-hint">Merci de préciser si ces prestations sont des extras facturables.</p>
+        </div>
+
+        <div class="divider-ornament"><div class="div-line"></div><div class="div-diamond"></div><div class="div-line"></div></div>
+        <button class="submit" id="btn-submit">Confirmer la réservation</button>
+      </div>
+    </div>
+    <p class="footer-note">Toute réservation est soumise à confirmation par notre équipe.</p>
+  </div>
+
+  <div id="confirm-view" class="confirm-screen">
+    <div class="confirm-card">
+      <div class="confirm-top"></div>
+      <div class="confirm-body">
+        <div class="confirm-icon">
+          <svg class="confirm-check" viewBox="0 0 22 22" fill="none"><path d="M5 11.5l4.5 4.5 8-9" stroke="#b8985a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="confirm-ornament">
+          <div class="ornament">
+            <div class="ornament-line"></div>
+            <div class="ornament-shape"><div class="diamond-sm"></div><div class="diamond-lg"></div><div class="diamond-sm"></div></div>
+            <div class="ornament-line"></div>
+          </div>
+        </div>
+        <h2 class="confirm-title">Demande <em>reçue</em></h2>
+        <p class="confirm-message">Votre demande de réservation a bien été enregistrée.<br>Notre équipe reviendra vers vous dans les plus brefs délais avec les informations de votre chauffeur et la confirmation définitive de votre prise en charge.</p>
+        <div class="confirm-divider"><div class="div-line"></div><div class="div-diamond"></div><div class="div-line"></div></div>
+        <div class="confirm-recap" id="confirm-recap"></div>
+        <button class="confirm-new-btn" id="btn-new">Effectuer une nouvelle réservation</button>
+      </div>
+    </div>
+    <p class="confirm-footer">Royal Safe Prestige — Service disponible 24h/24, 7j/7</p>
+  </div>
+</div>
+
+<div class="picker-dropdown" id="cal-dropdown">
+  <div class="cal-header">
+    <button class="cal-nav" id="cal-prev">&#8249;</button>
+    <span class="cal-month-label" id="cal-label"></span>
+    <button class="cal-nav" id="cal-next">&#8250;</button>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-weekdays"><div class="cal-wd">Lu</div><div class="cal-wd">Ma</div><div class="cal-wd">Me</div><div class="cal-wd">Je</div><div class="cal-wd">Ve</div><div class="cal-wd">Sa</div><div class="cal-wd">Di</div></div>
+    <div class="cal-days" id="cal-days"></div>
+  </div>
+</div>
+<div class="picker-dropdown" id="time-dropdown" style="width:220px;">
+  <div class="time-picker-inner">
+    <div class="time-display"><div class="time-display-val"><span id="disp-h">--</span>:<span id="disp-m">--</span></div></div>
+    <div class="time-cols">
+      <div class="time-col-wrap"><div class="time-col-label">Heure</div><div class="time-col" id="col-hours"></div></div>
+      <div class="time-sep">:</div>
+      <div class="time-col-wrap"><div class="time-col-label">Minutes</div><div class="time-col" id="col-minutes"></div></div>
+    </div>
+    <button class="time-confirm" id="time-confirm">Valider</button>
+  </div>
+</div>
+<div class="picker-dropdown" id="duree-dropdown" style="width:240px;">
+  <div class="time-picker-inner">
+    <div class="time-display"><div class="time-display-val"><span id="disp-dh">--</span>h<span id="disp-dm">--</span></div></div>
+    <div class="time-cols">
+      <div class="time-col-wrap"><div class="time-col-label">Heures</div><div class="time-col" id="col-duree-h"></div></div>
+      <div class="time-sep">:</div>
+      <div class="time-col-wrap"><div class="time-col-label">Minutes</div><div class="time-col" id="col-duree-m"></div></div>
+    </div>
+    <button class="time-confirm" id="duree-confirm">Valider</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const WORKER_URL='https://red-salad-0d0f.ilyesbenmimoun9.workers.dev';
+const AT_BASE='appXFZdTQdIyh3JpN';
+const AT_TABLE='tblX2SXNHPRkvgdN9';
+const AT_TABLE_CLIENTS='tbljYIKxgbqIzUO6e';
+const WEBHOOK='https://hook.eu1.make.com/vxkb2lg09knjpjiw7btbs33o4owiaua2';
+const FIELDS={
+  adresse_arrivee:'fldkLheGfXlwAYrYQ',adresse_depart:'fldgL1EHe6xTQ1jpR',
+  date_heure:'flddcJJj3R2KPW4Vu',type_vehicule:'fldzMOkWzuQ4l9j4p',
+  type_prestation:'fldsd1zS252OprA7i',date_demande:'fldhdkUhjbnElYt73',
+  extra:'fldAfioTuMYS1YVx7',num_vol_train:'fld4a9WmBZNXsnbOk',
+  nb_vehicules:'fldwCwOQFoZssBoRv',coordonnees:'fldYE2CRwSRvQOtZt',
+  nb_passagers:'fld8DuLBFIQRxVf4K',
+  client:'fldoqe3W5U1WVGVZJ',
+};
+const CHAMP_NOM_CLIENT='fldlfhXnhxHa2Y6yN';
+
+// ── LECTURE PARAMÈTRES URL ────────────────────────────────
+const urlParams=new URLSearchParams(window.location.search);
+const clientId=urlParams.get('client_id')||null;
+let clientRecord=null; // sera rempli après le GET
+
+// ── CHARGEMENT DU CLIENT ──────────────────────────────────
+async function loadClient(){
+  if(!clientId) return;
+  try{
+    const res=await fetch(
+      `${WORKER_URL}/client?id=${clientId}`,
+      {}
+    );
+    if(!res.ok) return;
+    const data=await res.json();
+    clientRecord=data;
+    const nom=data.fields?.['Dénomination']||data.fields?.['Nom complet']||data.fields?.['Nom']||data.fields?.[CHAMP_NOM_CLIENT]||'';
+    if(nom){
+      // Affiche le message de bienvenue
+      const greet=document.getElementById('client-greeting');
+      if(greet){ greet.textContent=`Bonjour ${nom}`; greet.style.display='block'; }
+    }
+  }catch(e){ console.warn('Client load failed',e); }
+}
+
+function showToast(msg,isError=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(isError?' error':'');
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+let vehicleCount=1,passengerCount=1;
+function changeCount(type,delta){
+  if(type==='vehicle'){
+    vehicleCount=Math.min(10,Math.max(1,vehicleCount+delta));
+    document.getElementById('vehicle-count').textContent=vehicleCount;
+    document.getElementById('btn-minus-v').disabled=vehicleCount<=1;
+    document.getElementById('btn-plus-v').disabled=vehicleCount>=10;
+  }else{
+    passengerCount=Math.min(20,Math.max(1,passengerCount+delta));
+    document.getElementById('passenger-count').textContent=passengerCount;
+    document.getElementById('btn-minus-p').disabled=passengerCount<=1;
+    document.getElementById('btn-plus-p').disabled=passengerCount>=20;
+  }
+}
+
+document.querySelectorAll('input[name="prestation"]').forEach(r=>{
+  r.addEventListener('change',()=>{
+    const mad=r.value==='Mise à disposition';
+    document.getElementById('slide-duree').classList.toggle('open',mad);
+    document.getElementById('slide-arrivee').classList.toggle('open',!mad);
+    if(mad)document.getElementById('slide-vol').classList.remove('open');
+    else updateVolTrain();
+  });
+});
+
+const TRANSPORT_RE=/\b(gare|aéroport|aeroport|airport|terminal|orly|cdg|roissy|beauvais|part[- ]dieu|montparnasse|saint[- ]lazare|gare du nord|gare de l|austerlitz|bercy|massy)\b/i;
+const selectedValues={depart:'',arrivee:''};
+function updateVolTrain(){
+  const isMad=document.querySelector('input[name="prestation"]:checked').value==='Mise à disposition';
+  if(isMad){document.getElementById('slide-vol').classList.remove('open');return;}
+  document.getElementById('slide-vol').classList.toggle('open',
+    TRANSPORT_RE.test(selectedValues.depart)||TRANSPORT_RE.test(selectedValues.arrivee));
+}
+
+// ── AUTOCOMPLETE HYBRIDE : POI EN PREMIER ─────────────────
+let timers={},activeIdx={depart:-1,arrivee:-1};
+function debounce(fn,d,k){clearTimeout(timers[k]);timers[k]=setTimeout(fn,d);}
+function closeSug(el){el.classList.remove('open');el.innerHTML='';}
+
+const POI_TYPES=['station','railway','airport','aerodrome','bus_station','ferry_terminal','halt'];
+function isTransportPOI(item){
+  const type=item.type||'',cls=item.class||'';
+  const name=(item.namedetails?.name||item.display_name||'').toLowerCase();
+  return POI_TYPES.includes(type)||cls==='railway'||cls==='aeroway'||
+    /\b(gare|aéroport|aeroport|airport|terminal|station)\b/.test(name);
+}
+
+function formatNominatimPOI(item){
+  const addr=item.address||{};
+  const name=item.namedetails?.name||item.name||'';
+  const city=addr.city||addr.town||addr.village||'';
+  const postcode=addr.postcode||'';
+  const sub=[postcode,city].filter(Boolean).join(' ');
+  const label=name+(sub?', '+sub:'');
+  return {main:name,sub,label,isPOI:true};
+}
+
+async function fetchAddr(query,sugEl,inputEl,key){
+  if(query.length<3){closeSug(sugEl);return;}
+  sugEl.innerHTML='<div class="loading-dots">Recherche…</div>';
+  sugEl.classList.add('open');
+  try{
+    const[banRes,nomRes]=await Promise.allSettled([
+      fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=4&autocomplete=1`),
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&namedetails=1&limit=6&countrycodes=fr&accept-language=fr`,
+        {headers:{'Accept-Language':'fr','User-Agent':'RoyalSafePrestige/1.0'}})
+    ]);
+
+    // POI Nominatim — transport uniquement
+    let pois=[];
+    if(nomRes.status==='fulfilled'&&nomRes.value.ok){
+      const nomData=await nomRes.value.json();
+      pois=nomData.filter(isTransportPOI).slice(0,2).map(formatNominatimPOI).filter(r=>r.main);
+    }
+
+    // Adresses BAN — format propre
+    let addresses=[];
+    if(banRes.status==='fulfilled'&&banRes.value.ok){
+      const banData=await banRes.value.json();
+      (banData.features||[]).forEach(f=>{
+        const p=f.properties;
+        // Titre court : numéro + nom de voie
+        const street=p.name||p.label.split(',')[0];
+        // Sous-titre : code postal + ville
+        const city=p.city||'';
+        const postcode=p.postcode||'';
+        const sub=[postcode,city].filter(Boolean).join(' ');
+        // Éviter doublon avec un POI
+        const dup=pois.some(poi=>poi.main.toLowerCase()===street.toLowerCase());
+        if(!dup) addresses.push({main:street,sub,label:p.label,isPOI:false});
+      });
+    }
+
+    // ── POI D'ABORD, séparateur, puis adresses ──
+    activeIdx[key]=-1;
+    if(!pois.length&&!addresses.length){closeSug(sugEl);return;}
+    sugEl.innerHTML='';
+
+    if(pois.length){
+      const sec=document.createElement('div');
+      sec.className='sug-section-label';
+      sec.textContent='Gares & Aéroports';
+      sugEl.appendChild(sec);
+      pois.forEach(r=>appendSugItem(r,sugEl,inputEl,key));
+    }
+
+    if(addresses.length){
+      if(pois.length){
+        const sec=document.createElement('div');
+        sec.className='sug-section-label';
+        sec.textContent='Adresses';
+        sugEl.appendChild(sec);
+      }
+      addresses.slice(0,5-pois.length).forEach(r=>appendSugItem(r,sugEl,inputEl,key));
+    }
+
+    sugEl.classList.add('open');
+  }catch(e){closeSug(sugEl);}
+}
+
+function appendSugItem(r,sugEl,inputEl,key){
+  const el=document.createElement('div');
+  el.className='suggestion-item'+(r.isPOI?' is-poi':'');
+  const badge=r.isPOI?'<span class="sug-badge">POI</span>':'';
+  el.innerHTML=`<div class="sug-main">${r.main}${badge}</div>${r.sub?`<div class="sug-sub">${r.sub}</div>`:''}`;
+  el.addEventListener('click',()=>{
+    inputEl.value=r.label;
+    selectedValues[key]=r.label;
+    closeSug(sugEl);
+    updateVolTrain();
+    inputEl.classList.remove('field-error');
+  });
+  sugEl.appendChild(el);
+}
+
+function setupAC(inputId,sugId,key){
+  const input=document.getElementById(inputId),sug=document.getElementById(sugId);
+  input.addEventListener('input',()=>{selectedValues[key]='';updateVolTrain();debounce(()=>fetchAddr(input.value.trim(),sug,input,key),350,key);});
+  input.addEventListener('keydown',e=>{
+    const items=sug.querySelectorAll('.suggestion-item');if(!items.length)return;
+    if(e.key==='ArrowDown'){e.preventDefault();activeIdx[key]=Math.min(activeIdx[key]+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('active',i===activeIdx[key]));}
+    else if(e.key==='ArrowUp'){e.preventDefault();activeIdx[key]=Math.max(activeIdx[key]-1,0);items.forEach((it,i)=>it.classList.toggle('active',i===activeIdx[key]));}
+    else if(e.key==='Enter'){e.preventDefault();if(activeIdx[key]>=0)items[activeIdx[key]].dispatchEvent(new Event('click'));}
+    else if(e.key==='Escape')closeSug(sug);
+  });
+  input.addEventListener('blur',()=>setTimeout(()=>closeSug(sug),200));
+}
+setupAC('input-depart','sug-depart','depart');
+setupAC('input-arrivee','sug-arrivee','arrivee');
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#wrap-depart'))closeSug(document.getElementById('sug-depart'));
+  if(!e.target.closest('#wrap-arrivee'))closeSug(document.getElementById('sug-arrivee'));
+});
+
+// Efface le rouge dès qu'un champ est rempli
+function clearError(id){ document.getElementById(id)?.classList.remove('field-error'); }
+document.getElementById('input-coords').addEventListener('input',()=>clearError('input-coords'));
+document.getElementById('input-date').addEventListener('click',e=>{e.stopPropagation();clearError('input-date');togglePicker('cal',document.getElementById('wrap-date'));});
+document.getElementById('input-time').addEventListener('click',e=>{e.stopPropagation();clearError('input-time');togglePicker('time',document.getElementById('wrap-time'));});
+document.getElementById('input-duree').addEventListener('click',e=>{e.stopPropagation();clearError('input-duree');togglePicker('duree',document.getElementById('wrap-duree'));});
+function positionDropdown(drop,anchor){
+  // Sur mobile (<= 640px) les dropdowns sont en bottom sheet CSS — pas de positionnement JS
+  if(window.innerWidth<=640) return;
+  const rect=anchor.getBoundingClientRect();
+  drop.style.top=(rect.bottom+4)+'px';drop.style.left=rect.left+'px';
+  drop.style.width=Math.max(parseInt(drop.style.width)||260,rect.width)+'px';
+}
+
+const MONTHS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+let calDate=new Date(),calSelected=null;
+function renderCal(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  document.getElementById('cal-label').textContent=`${MONTHS_FR[m]} ${y}`;
+  const first=new Date(y,m,1).getDay(),offset=first===0?6:first-1,days=new Date(y,m+1,0).getDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  const el=document.getElementById('cal-days');el.innerHTML='';
+  for(let i=0;i<offset;i++){const d=document.createElement('div');d.className='cal-day empty';el.appendChild(d);}
+  for(let d=1;d<=days;d++){
+    const div=document.createElement('div');div.className='cal-day';div.textContent=d;
+    const td=new Date(y,m,d);
+    if(td<today)div.classList.add('past');
+    if(calSelected&&calSelected.getFullYear()===y&&calSelected.getMonth()===m&&calSelected.getDate()===d)div.classList.add('selected');
+    if(td.getTime()===today.getTime())div.classList.add('today');
+    div.addEventListener('click',()=>{calSelected=new Date(y,m,d);document.getElementById('input-date').value=`${String(d).padStart(2,'0')}/${String(m+1).padStart(2,'0')}/${y}`;closePicker('cal');renderCal();});
+    el.appendChild(div);
+  }
+}
+document.getElementById('cal-prev').addEventListener('click',e=>{e.stopPropagation();calDate.setMonth(calDate.getMonth()-1);renderCal();});
+document.getElementById('cal-next').addEventListener('click',e=>{e.stopPropagation();calDate.setMonth(calDate.getMonth()+1);renderCal();});
+renderCal();
+
+const MINUTES=['00','05','10','15','20','25','30','35','40','45','50','55'];
+function buildCol(colEl,items,onSelect){
+  colEl.innerHTML='';
+  items.forEach(val=>{
+    const item=document.createElement('div');item.className='time-item';item.textContent=val;
+    item.addEventListener('click',()=>{colEl.querySelectorAll('.time-item').forEach(e=>e.classList.remove('selected'));item.classList.add('selected');onSelect(val);});
+    colEl.appendChild(item);
+  });
+}
+let selH=null,selM=null;
+buildCol(document.getElementById('col-hours'),Array.from({length:24},(_,i)=>String(i).padStart(2,'0')),v=>{selH=v;document.getElementById('disp-h').textContent=v;});
+buildCol(document.getElementById('col-minutes'),MINUTES,v=>{selM=v;document.getElementById('disp-m').textContent=v;});
+document.getElementById('time-confirm').addEventListener('click',()=>{if(selH!==null&&selM!==null){document.getElementById('input-time').value=`${selH}:${selM}`;closePicker('time');}});
+
+let selDH=null,selDM=null;
+buildCol(document.getElementById('col-duree-h'),Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')),v=>{selDH=v;document.getElementById('disp-dh').textContent=v;});
+buildCol(document.getElementById('col-duree-m'),MINUTES,v=>{selDM=v;document.getElementById('disp-dm').textContent=v;});
+document.getElementById('duree-confirm').addEventListener('click',()=>{if(selDH!==null&&selDM!==null){document.getElementById('input-duree').value=`${selDH}h${selDM}`;closePicker('duree');}});
+
+const pickers={cal:{drop:document.getElementById('cal-dropdown')},time:{drop:document.getElementById('time-dropdown')},duree:{drop:document.getElementById('duree-dropdown')}};
+
+function getOpenPicker(){
+  return Object.keys(pickers).find(k=>pickers[k].drop.classList.contains('open'))||null;
+}
+
+function isInsideAnyPicker(el){
+  return ['cal-dropdown','time-dropdown','duree-dropdown',
+          'wrap-date','wrap-time','wrap-duree']
+    .some(id=>{ const node=document.getElementById(id); return node&&node.contains(el); });
+}
+
+function scrollToReveal(drop){
+  if(window.innerWidth<=640) return; // bottom sheet toujours visible sur mobile
+  requestAnimationFrame(()=>{
+    const rect=drop.getBoundingClientRect();
+    const viewH=window.innerHeight;
+    const margin=16;
+    if(rect.bottom>viewH-margin){
+      const scrollBy=rect.bottom-(viewH-margin);
+      window.scrollBy({top:scrollBy,behavior:'smooth'});
+    }
+  });
+}
+
+function togglePicker(which,anchor){
+  const isOpen=pickers[which].drop.classList.contains('open');
+  Object.values(pickers).forEach(p=>p.drop.classList.remove('open'));
+  if(!isOpen){
+    positionDropdown(pickers[which].drop,anchor);
+    pickers[which].drop.classList.add('open');
+    if(which==='cal')renderCal();
+    scrollToReveal(pickers[which].drop);
+  }
+}
+function closePicker(which){pickers[which].drop.classList.remove('open');}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#wrap-date')&&!e.target.closest('#cal-dropdown'))closePicker('cal');
+  if(!e.target.closest('#wrap-time')&&!e.target.closest('#time-dropdown'))closePicker('time');
+  if(!e.target.closest('#wrap-duree')&&!e.target.closest('#duree-dropdown'))closePicker('duree');
+});
+
+// Ferme les pickers au scroll UNIQUEMENT si le scroll vient de hors des dropdowns
+window.addEventListener('scroll',e=>{
+  if(!isInsideAnyPicker(e.target)){
+    // Ne ferme que si aucun picker n'est ouvert — le scroll de la page ne doit pas
+    // interférer quand un picker est ouvert
+    const open=getOpenPicker();
+    if(open){
+      // Repositionne le dropdown pour qu'il suive l'ancre si la page scroll
+      const anchorMap={cal:'wrap-date',time:'wrap-time',duree:'wrap-duree'};
+      const anchor=document.getElementById(anchorMap[open]);
+      if(anchor) positionDropdown(pickers[open].drop,anchor);
+    }
+  }
+},true);
+
+function showConfirmation(payload){
+  const isMad=payload.type_prestation==='Mise à disposition';
+  const rows=[
+    {label:'Prestation',value:payload.type_prestation},{label:'Véhicule',value:payload.type_vehicule},
+    {label:'Véhicules',value:payload.nb_vehicules},{label:'Passagers',value:payload.nb_passagers},
+    {label:'Départ',value:payload.adresse_depart},
+    {label:isMad?'Durée':'Arrivée',value:payload.adresse_arrivee},
+    {label:'Date & heure',value:payload.date_heure_display},
+  ];
+  if(payload.num_vol_train)rows.push({label:'Vol / Train',value:payload.num_vol_train});
+  if(payload.coordonnees)rows.push({label:'Passager',value:payload.coordonnees});
+  if(payload.extra)rows.push({label:'Extras',value:payload.extra});
+  document.getElementById('confirm-recap').innerHTML=rows.map(r=>`<div class="recap-row"><span class="recap-label">${r.label}</span><span class="recap-value">${r.value}</span></div>`).join('');
+  document.getElementById('form-view').style.display='none';
+  document.getElementById('confirm-view').classList.add('visible');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+document.getElementById('btn-new').addEventListener('click',()=>{
+  document.getElementById('confirm-view').classList.remove('visible');
+  document.getElementById('form-view').style.display='block';
+  document.querySelectorAll('input[type=text], textarea').forEach(el=>el.value='');
+  document.querySelector('input[name="prestation"][value="Transfert simple"]').checked=true;
+  document.querySelector('input[name="vehicule"][value="Mercedes Classe E"]').checked=true;
+  vehicleCount=1;passengerCount=1;
+  document.getElementById('vehicle-count').textContent='1';
+  document.getElementById('passenger-count').textContent='1';
+  document.getElementById('btn-minus-v').disabled=true;document.getElementById('btn-plus-v').disabled=false;
+  document.getElementById('btn-minus-p').disabled=true;document.getElementById('btn-plus-p').disabled=false;
+  selectedValues.depart='';selectedValues.arrivee='';
+  selH=null;selM=null;selDH=null;selDM=null;
+  document.getElementById('slide-vol').classList.remove('open');
+  document.getElementById('slide-duree').classList.remove('open');
+  document.getElementById('slide-arrivee').classList.add('open');
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+document.getElementById('btn-submit').addEventListener('click',async()=>{
+  const prestation=document.querySelector('input[name="prestation"]:checked').value;
+  const vehicule=document.querySelector('input[name="vehicule"]:checked').value;
+  const depart=document.getElementById('input-depart').value.trim();
+  const arrivee=document.getElementById('input-arrivee').value.trim();
+  const duree=document.getElementById('input-duree').value.trim();
+  const dateVal=document.getElementById('input-date').value.trim();
+  const timeVal=document.getElementById('input-time').value.trim();
+  const extras=document.getElementById('input-extras').value.trim();
+  const coords=document.getElementById('input-coords').value.trim();
+  const vol=document.getElementById('input-vol').value.trim();
+  const isMad=prestation==='Mise à disposition';
+  // Nettoie les erreurs précédentes
+  document.querySelectorAll('.field-error').forEach(el=>el.classList.remove('field-error'));
+
+  // Validation groupée — marque tous les champs manquants en rouge
+  let errors=[];
+  if(!depart){ document.getElementById('input-depart').classList.add('field-error'); errors.push('départ'); }
+  if(!isMad&&!arrivee){ document.getElementById('input-arrivee').classList.add('field-error'); errors.push('arrivée'); }
+  if(isMad&&!duree){ document.getElementById('input-duree').classList.add('field-error'); errors.push('durée'); }
+  if(!dateVal){ document.getElementById('input-date').classList.add('field-error'); errors.push('date'); }
+  if(!timeVal){ document.getElementById('input-time').classList.add('field-error'); errors.push('heure'); }
+  if(!coords){ document.getElementById('input-coords').classList.add('field-error'); errors.push('coordonnées'); }
+
+  if(errors.length>0){
+    showToast('Certains champs obligatoires sont manquants.',true);
+    // Scroll vers le premier champ en erreur
+    const first=document.querySelector('.field-error');
+    if(first) first.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  const[dd,mm,yyyy]=dateVal.split('/');
+  const dateTimeISO=`${yyyy}-${mm}-${dd}T${timeVal}:00.000Z`;
+  const nowISO=new Date().toISOString();
+  const arriveeVal=isMad?duree:arrivee;
+  const payload={
+    type_prestation:prestation,type_vehicule:vehicule,
+    nb_vehicules:vehicleCount,nb_passagers:passengerCount,
+    adresse_depart:depart,adresse_arrivee:arriveeVal,
+    date_heure:dateTimeISO,date_heure_display:`${dateVal} à ${timeVal}`,
+    date_demande:nowISO,
+    ...(clientId&&{client_id:clientId}),
+    ...(vol&&{num_vol_train:vol}),
+    ...(coords&&{coordonnees:coords}),
+    ...(extras&&{extra:extras}),
+  };
+
+  // ── GÉNÉRATION DES EMAILS HTML ────────────────────────
+  function buildEmailClient(p, recordId) {
+    const isMad = p.type_prestation === 'Mise à disposition';
+    const rows = [
+      ['Type de prestation', p.type_prestation],
+      ['Type de véhicule', p.type_vehicule],
+      ['Nombre de véhicules', p.nb_vehicules],
+      ['Nombre de passagers', p.nb_passagers],
+      ['Départ', p.adresse_depart],
+      [isMad ? 'Durée' : 'Arrivée', p.adresse_arrivee],
+      ['Date & heure', p.date_heure_display],
+      ...(p.num_vol_train ? [['Vol / Train', p.num_vol_train]] : []),
+      ...(p.extra ? [['Extras', p.extra]] : []),
+    ].map(([l,v]) => `<tr><td style="padding:7px 0;font-size:11px;color:#b5afa4;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #faf8f4;width:45%">${l}</td><td style="padding:7px 0;font-size:13px;color:#1a1814;text-align:right;border-bottom:1px solid #faf8f4">${v}</td></tr>`).join('');
+    const nomClient = clientRecord?.fields?.['Dénomination'] || '';
+    return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f7f5f0;font-family:Helvetica Neue,Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:32px 16px"><div style="background:#fff;border:1px solid #e8e3d8;overflow:hidden"><div style="height:3px;background:linear-gradient(90deg,#c9a96e,#e8d5a3,#c9a96e)"></div><div style="padding:36px 36px 28px;text-align:center;border-bottom:1px solid #f0ece3"><p style="font-size:11px;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:#b8985a;margin:0 0 10px">Royal Safe Prestige</p><h1 style="font-size:26px;font-weight:300;color:#1a1814;margin:0">Votre demande a bien <strong>été reçue</strong></h1></div><div style="padding:28px 36px;text-align:center;border-bottom:1px solid #f0ece3"><h2 style="font-size:18px;font-weight:300;color:#1a1814;margin:0 0 10px">Bonjour ${nomClient || 'Madame, Monsieur'},</h2><p style="font-size:14px;color:#6b6760;line-height:1.7;margin:0">Nous avons bien reçu votre demande de réservation.<br>Notre équipe prend en charge votre dossier et vous contactera très prochainement avec les informations de votre chauffeur.</p></div><div style="padding:24px 36px;border-bottom:1px solid #f0ece3"><table width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table></div><div style="padding:20px 36px;background:#faf9f6;text-align:center"><p style="font-size:12px;color:#b8985a;font-weight:500;margin:0 0 4px">Royal Safe Prestige</p><p style="font-size:11px;color:#b5afa4;margin:0">Service disponible 24h/24, 7j/7</p></div></div></div></body></html>`;
+  }
+
+  function buildEmailPrestataire(p, recordId) {
+    const isMad = p.type_prestation === 'Mise à disposition';
+    const rows = [
+      ['Type de prestation', p.type_prestation, true],
+      ['Type de véhicule', p.type_vehicule, true],
+      ['Nb véhicules', p.nb_vehicules, false],
+      ['Nb passagers', p.nb_passagers, false],
+      ['Date & heure', p.date_heure_display, false],
+      ['Départ', p.adresse_depart, false],
+      [isMad ? 'Durée' : 'Arrivée', p.adresse_arrivee, false],
+      ...(p.num_vol_train ? [['Vol / Train', p.num_vol_train, false]] : []),
+    ].map(([l,v,h]) => `<tr><td style="padding:6px 0;font-size:11px;color:#b5afa4;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #faf8f4;width:45%">${l}</td><td style="padding:6px 0;font-size:13px;color:${h?'#b8985a':'#1a1814'};font-weight:${h?'500':'400'};text-align:right;border-bottom:1px solid #faf8f4">${v}</td></tr>`).join('');
+    const airtableUrl = `https://airtable.com/appXFZdTQdIyh3JpN/tblX2SXNHPRkvgdN9/viwjFMu6QDDpdQq27?blocks=hide/${recordId}`;
+    return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f7f5f0;font-family:Helvetica Neue,Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:32px 16px"><div style="background:#fff;border:1px solid #e8e3d8;overflow:hidden"><div style="height:3px;background:linear-gradient(90deg,#c9a96e,#e8d5a3,#c9a96e)"></div><div style="padding:28px 36px;border-bottom:1px solid #f0ece3"><div style="display:inline-block;background:#fdfaf4;border:1px solid #e8d5a3;color:#b8985a;font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;padding:4px 10px;margin-bottom:12px">Nouvelle réservation</div><h1 style="font-size:20px;font-weight:300;color:#1a1814;margin:0 0 4px">Royal Safe Prestige</h1><p style="font-size:12px;color:#b5afa4;margin:0">Reçue le ${p.date_demande||''}</p></div><div style="padding:22px 36px;border-bottom:1px solid #f0ece3"><table width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table></div><div style="padding:18px 36px;background:#fdfaf4;border-bottom:1px solid #f0ece3"><p style="font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#b8985a;margin:0 0 6px">Coordonnées du passager</p><p style="font-size:14px;color:#1a1814;margin:0;line-height:1.6">${p.coordonnees||''}</p></div>${p.extra?`<div style="padding:16px 36px;background:#faf9f6;border-bottom:1px solid #f0ece3"><p style="font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#b8985a;margin:0 0 6px">Extras</p><p style="font-size:13px;color:#6b6760;margin:0">${p.extra}</p></div>`:''}<div style="padding:24px 36px;text-align:center;border-bottom:1px solid #f0ece3"><a href="${airtableUrl}" style="display:inline-block;background:#fdfaf4;color:#b8985a;font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;padding:13px 28px;text-decoration:none;border:1px solid #e8d5a3;border-bottom:2px solid #c9a96e">Voir la course dans le tableau</a></div><div style="padding:14px 36px;text-align:center"><p style="font-size:11px;color:#b8985a;font-weight:500;margin:0 0 3px">Royal Safe Prestige</p><p style="font-size:11px;color:#b5afa4;margin:0">Email interne — ne pas transférer</p></div></div></div></body></html>`;
+  }  const fields={
+    [FIELDS.type_prestation]:prestation,[FIELDS.type_vehicule]:vehicule,
+    [FIELDS.adresse_depart]:depart,[FIELDS.adresse_arrivee]:arriveeVal,
+    [FIELDS.date_heure]:dateTimeISO,[FIELDS.date_demande]:nowISO,
+    [FIELDS.nb_vehicules]:vehicleCount,[FIELDS.nb_passagers]:passengerCount,
+    ...(clientId&&{[FIELDS.client]:[clientId]}),
+    ...(extras&&{[FIELDS.extra]:extras}),
+    ...(coords&&{[FIELDS.coordonnees]:coords}),
+    ...(vol&&{[FIELDS.num_vol_train]:vol}),
+  };
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true;btn.textContent='Envoi en cours…';
+
+  // Alerte email + webhook en cas d'erreur
+  async function notifyError(source, errorMsg) {
+    const errorPayload={
+      ...payload,
+      statut: 'ERREUR',
+      error_source: source,
+      error_message: errorMsg,
+      date_demande: new Date().toLocaleString('fr-FR'),
+    };
+    await Promise.allSettled([
+      // Email via EmailJS
+      emailjs.send('service_vq473u4','template_pcwbpeb',{
+        error_source: source,
+        error_message: errorMsg,
+        type_prestation: payload.type_prestation||'',
+        type_vehicule: payload.type_vehicule||'',
+        nb_vehicules: String(payload.nb_vehicules||''),
+        nb_passagers: String(payload.nb_passagers||''),
+        adresse_depart: payload.adresse_depart||'',
+        adresse_arrivee: payload.adresse_arrivee||'',
+        date_heure_display: payload.date_heure_display||'',
+        num_vol_train: payload.num_vol_train||'N/A',
+        coordonnees: payload.coordonnees||'N/A',
+        extra: payload.extra||'N/A',
+        date_demande: new Date().toLocaleString('fr-FR'),
+      }),
+      // Webhook Make avec tag ERREUR
+      fetch(WEBHOOK,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(errorPayload)
+      })
+    ]);
+  }
+
+  try{
+    const atRes=await fetch(`${WORKER_URL}/course`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(fields)});
+    const atData=await atRes.json();
+    if(!atRes.ok){
+      await notifyError('Airtable',atData.error?.message||`HTTP ${atRes.status}`);
+      throw new Error(atData.error?.message||'Erreur Airtable');
+    }
+    // Webhook avec ID Airtable inclus
+    const airtableId = atData.id || '';
+    const whRes = await fetch(WEBHOOK,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        ...payload,
+        statut:'OK',
+        airtable_record_id: airtableId,
+        email_client_html: buildEmailClient(payload, airtableId),
+        email_prestataire_html: buildEmailPrestataire(payload, airtableId),
+      })
+    });
+    if(!whRes.ok){
+      await notifyError('Webhook Make',`HTTP ${whRes.status} — scénario injoignable`);
+    }
+    showConfirmation(payload);
+  }catch(err){
+    if(!err.message.includes('Airtable')){
+      await notifyError('Réseau / Inattendu', err.message);
+    }
+    showToast('Erreur : '+err.message,true);
+    btn.disabled=false;btn.textContent='Confirmer la réservation';
+  }
+});
+
+// Chargement client en dernier — DOM garanti prêt
+loadClient();
+</script>
+</body>
+</html>
