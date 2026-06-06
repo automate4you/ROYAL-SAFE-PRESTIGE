@@ -426,7 +426,7 @@ async function loadClient(){
     if(nom){
       // Affiche le message de bienvenue
       const greet=document.getElementById('client-greeting');
-      if(greet){ greet.textContent=`Bonjour ${nom}`; greet.style.display='block'; }
+      if(greet){ greet.textContent=`Bonjour ${nom},`; greet.style.display='block'; }
     }
   }catch(e){ console.warn('Client load failed',e); }
 }
