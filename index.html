@@ -306,6 +306,26 @@ textarea.text-input { resize: none; line-height: 1.7; }
                   <div class="route-dot"><svg width="7" height="7" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 4.5H13l-3.75 2.75 1.5 4.5L7 10l-3.75 2.75 1.5-4.5L1 5.5h4.5z" fill="#c9a96e"/></svg></div>
                   <input class="text-input" type="text" id="input-vol" placeholder="Numéro de vol ou de train" style="padding-left:34px;">
                 </div>
+                <div style="margin-top:10px;">
+                  <div class="stepper-row">
+                    <div class="stepper-group">
+                      <span class="field-label" style="margin-bottom:6px;">Grandes valises</span>
+                      <div class="stepper">
+                        <button class="stepper-btn" id="btn-minus-lg" onclick="changeCount('luggage-big',-1)" disabled>−</button>
+                        <div class="stepper-val" id="luggage-big-count">0</div>
+                        <button class="stepper-btn" id="btn-plus-lg" onclick="changeCount('luggage-big',1)">+</button>
+                      </div>
+                    </div>
+                    <div class="stepper-group">
+                      <span class="field-label" style="margin-bottom:6px;">Petites valises</span>
+                      <div class="stepper">
+                        <button class="stepper-btn" id="btn-minus-sm" onclick="changeCount('luggage-small',-1)" disabled>−</button>
+                        <div class="stepper-val" id="luggage-small-count">0</div>
+                        <button class="stepper-btn" id="btn-plus-sm" onclick="changeCount('luggage-small',1)">+</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -313,6 +333,9 @@ textarea.text-input { resize: none; line-height: 1.7; }
 
         <div class="field-group">
           <label class="field-label required">Date & heure de la course</label>
+          <div id="transport-advisory" style="display:none;margin-bottom:10px;padding:10px 14px;background:#fdfaf4;border-left:2px solid #c9a96e;font-size:12px;font-weight:300;color:#6b6760;line-height:1.6;">
+            Prise en charge ou dépose en gare&nbsp;/ aéroport&nbsp;? Notre équipe vous conseille l'heure idéale sur WhatsApp au <a href="https://wa.me/33624043638" style="color:#b8985a;text-decoration:none;font-weight:400;">+33 6 24 04 36 38</a>.
+          </div>
           <div class="date-row">
             <div id="wrap-date"><input class="text-input picker-input" type="text" id="input-date" placeholder="Sélectionner une date" readonly></div>
             <div id="wrap-time"><input class="text-input picker-input" type="text" id="input-time" placeholder="Heure" readonly></div>
@@ -445,20 +468,57 @@ function showToast(msg,isError=false){
   t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-let vehicleCount=1,passengerCount=1;
+const PASSENGER_MAX = {
+  'Mercedes Classe E': 3,
+  'Mercedes Classe S': 3,
+  'Mercedes Classe V': 7,
+};
+
+function getMaxPassengers() {
+  const v = document.querySelector('input[name="vehicule"]:checked')?.value || 'Mercedes Classe E';
+  return PASSENGER_MAX[v] || 3;
+}
+
+let vehicleCount=1,passengerCount=1,luggageBigCount=0,luggageSmallCount=0;
 function changeCount(type,delta){
   if(type==='vehicle'){
     vehicleCount=Math.min(10,Math.max(1,vehicleCount+delta));
     document.getElementById('vehicle-count').textContent=vehicleCount;
     document.getElementById('btn-minus-v').disabled=vehicleCount<=1;
     document.getElementById('btn-plus-v').disabled=vehicleCount>=10;
-  }else{
-    passengerCount=Math.min(20,Math.max(1,passengerCount+delta));
+  }else if(type==='passenger'){
+    const max=getMaxPassengers();
+    passengerCount=Math.min(max,Math.max(1,passengerCount+delta));
     document.getElementById('passenger-count').textContent=passengerCount;
     document.getElementById('btn-minus-p').disabled=passengerCount<=1;
-    document.getElementById('btn-plus-p').disabled=passengerCount>=20;
+    document.getElementById('btn-plus-p').disabled=passengerCount>=max;
+  }else if(type==='luggage-big'){
+    luggageBigCount=Math.min(20,Math.max(0,luggageBigCount+delta));
+    document.getElementById('luggage-big-count').textContent=luggageBigCount;
+    document.getElementById('btn-minus-lg').disabled=luggageBigCount<=0;
+    document.getElementById('btn-plus-lg').disabled=luggageBigCount>=20;
+  }else if(type==='luggage-small'){
+    luggageSmallCount=Math.min(20,Math.max(0,luggageSmallCount+delta));
+    document.getElementById('luggage-small-count').textContent=luggageSmallCount;
+    document.getElementById('btn-minus-sm').disabled=luggageSmallCount<=0;
+    document.getElementById('btn-plus-sm').disabled=luggageSmallCount>=20;
   }
 }
+
+function checkLuggageWarning(){}
+
+// Quand le véhicule change, ajuste le max passagers si nécessaire
+document.querySelectorAll('input[name="vehicule"]').forEach(r=>{
+  r.addEventListener('change',()=>{
+    const max=getMaxPassengers();
+    if(passengerCount>max){
+      passengerCount=max;
+      document.getElementById('passenger-count').textContent=passengerCount;
+    }
+    document.getElementById('btn-minus-p').disabled=passengerCount<=1;
+    document.getElementById('btn-plus-p').disabled=passengerCount>=max;
+  });
+});
 
 document.querySelectorAll('input[name="prestation"]').forEach(r=>{
   r.addEventListener('change',()=>{
@@ -474,9 +534,10 @@ const TRANSPORT_RE=/\b(gare|aéroport|aeroport|airport|terminal|orly|cdg|roissy|
 const selectedValues={depart:'',arrivee:''};
 function updateVolTrain(){
   const isMad=document.querySelector('input[name="prestation"]:checked').value==='Mise à disposition';
-  if(isMad){document.getElementById('slide-vol').classList.remove('open');return;}
-  document.getElementById('slide-vol').classList.toggle('open',
-    TRANSPORT_RE.test(selectedValues.depart)||TRANSPORT_RE.test(selectedValues.arrivee));
+  const show=!isMad&&(TRANSPORT_RE.test(selectedValues.depart)||TRANSPORT_RE.test(selectedValues.arrivee));
+  document.getElementById('slide-vol').classList.toggle('open',show);
+  if(isMad) document.getElementById('slide-vol').classList.remove('open');
+  document.getElementById('transport-advisory').style.display=show?'block':'none';
 }
 
 // ── AUTOCOMPLETE HYBRIDE : POI EN PREMIER ─────────────────
@@ -741,11 +802,15 @@ document.getElementById('btn-new').addEventListener('click',()=>{
   document.querySelectorAll('input[type=text], textarea').forEach(el=>el.value='');
   document.querySelector('input[name="prestation"][value="Transfert simple"]').checked=true;
   document.querySelector('input[name="vehicule"][value="Mercedes Classe E"]').checked=true;
-  vehicleCount=1;passengerCount=1;
+  vehicleCount=1;passengerCount=1;luggageBigCount=0;luggageSmallCount=0;
   document.getElementById('vehicle-count').textContent='1';
   document.getElementById('passenger-count').textContent='1';
+  document.getElementById('luggage-big-count').textContent='0';
+  document.getElementById('luggage-small-count').textContent='0';
   document.getElementById('btn-minus-v').disabled=true;document.getElementById('btn-plus-v').disabled=false;
   document.getElementById('btn-minus-p').disabled=true;document.getElementById('btn-plus-p').disabled=false;
+  document.getElementById('btn-minus-lg').disabled=true;document.getElementById('btn-plus-lg').disabled=false;
+  document.getElementById('btn-minus-sm').disabled=true;document.getElementById('btn-plus-sm').disabled=false;
   selectedValues.depart='';selectedValues.arrivee='';
   selH=null;selM=null;selDH=null;selDM=null;
   document.getElementById('slide-vol').classList.remove('open');
@@ -792,6 +857,8 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
   const payload={
     type_prestation:prestation,type_vehicule:vehicule,
     nb_vehicules:vehicleCount,nb_passagers:passengerCount,
+    ...(luggageBigCount>0&&{grandes_valises:luggageBigCount}),
+    ...(luggageSmallCount>0&&{petites_valises:luggageSmallCount}),
     adresse_depart:depart,adresse_arrivee:arriveeVal,
     date_heure:dateTimeISO,date_heure_display:`${dateVal} à ${timeVal}`,
     date_demande:nowISO,
