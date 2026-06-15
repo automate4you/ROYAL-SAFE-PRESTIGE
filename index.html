@@ -421,6 +421,7 @@ textarea.text-input { resize: none; line-height: 1.7; }
 <div class="toast" id="toast"></div>
 
 <script>
+const MAPBOX_TOKEN='pk.eyJ1IjoiaWx5ZXNiNDQ0IiwiYSI6ImNtcWVnNjUybzBoNXAycnI0bGpiNmRtcHQifQ.Mr6ts1yE30hntuvK8e373g';
 const WORKER_URL='https://red-salad-0d0f.ilyesbenmimoun9.workers.dev';
 const AT_BASE='appVoxoLNffEhZvHc';
 const AT_TABLE='tblX2SXNHPRkvgdN9';
@@ -548,14 +549,6 @@ let timers={},activeIdx={depart:-1,arrivee:-1};
 function debounce(fn,d,k){clearTimeout(timers[k]);timers[k]=setTimeout(fn,d);}
 function closeSug(el){el.classList.remove('open');el.innerHTML='';}
 
-const POI_TYPES=['station','railway','airport','aerodrome','bus_station','ferry_terminal','halt'];
-function isTransportPOI(item){
-  const type=item.type||'',cls=item.class||'';
-  const name=(item.namedetails?.name||item.display_name||'').toLowerCase();
-  return POI_TYPES.includes(type)||cls==='railway'||cls==='aeroway'||
-    /\b(gare|aéroport|aeroport|airport|terminal|station)\b/.test(name);
-}
-
 function formatNominatimPOI(item){
   const addr=item.address||{};
   const name=item.namedetails?.name||item.name||'';
@@ -566,69 +559,58 @@ function formatNominatimPOI(item){
   return {main:name,sub,label,isPOI:true};
 }
 
-async function fetchAddr(query,sugEl,inputEl,key){
-  if(query.length<3){closeSug(sugEl);return;}
-  sugEl.innerHTML='<div class="loading-dots">Recherche…</div>';
+async function fetchAddr(query, sugEl, inputEl, key) {
+  if (query.length < 3) { closeSug(sugEl); return; }
+  sugEl.innerHTML = '<div class="loading-dots">Recherche…</div>';
   sugEl.classList.add('open');
-  try{
-    const[banRes,nomRes]=await Promise.allSettled([
-      fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=4&autocomplete=1`),
-      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&namedetails=1&limit=6&countrycodes=fr&accept-language=fr`,
-        {headers:{'Accept-Language':'fr','User-Agent':'RoyalSafePrestige/1.0'}})
-    ]);
+  try {
+    // Mapbox Geocoding — couvre adresses ET POI (hôtels, restaurants, monuments...)
+    const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&language=fr&country=fr&limit=5&types=address,poi,place,locality`;
+    const res = await fetch(mapboxUrl);
+    const data = await res.json();
+    const features = data.features || [];
 
-    // POI Nominatim — transport uniquement
-    let pois=[];
-    if(nomRes.status==='fulfilled'&&nomRes.value.ok){
-      const nomData=await nomRes.value.json();
-      pois=nomData.filter(isTransportPOI).slice(0,2).map(formatNominatimPOI).filter(r=>r.main);
-    }
+    activeIdx[key] = -1;
+    if (!features.length) { closeSug(sugEl); return; }
 
-    // Adresses BAN — format propre
-    let addresses=[];
-    if(banRes.status==='fulfilled'&&banRes.value.ok){
-      const banData=await banRes.value.json();
-      (banData.features||[]).forEach(f=>{
-        const p=f.properties;
-        // Titre court : numéro + nom de voie
-        const street=p.name||p.label.split(',')[0];
-        // Sous-titre : code postal + ville
-        const city=p.city||'';
-        const postcode=p.postcode||'';
-        const sub=[postcode,city].filter(Boolean).join(' ');
-        // Éviter doublon avec un POI
-        const dup=pois.some(poi=>poi.main.toLowerCase()===street.toLowerCase());
-        if(!dup) addresses.push({main:street,sub,label:p.label,isPOI:false});
-      });
-    }
+    sugEl.innerHTML = '';
+    let poiItems = [], addressItems = [];
 
-    // ── POI D'ABORD, séparateur, puis adresses ──
-    activeIdx[key]=-1;
-    if(!pois.length&&!addresses.length){closeSug(sugEl);return;}
-    sugEl.innerHTML='';
+    features.forEach(f => {
+      const isPOI = f.place_type.includes('poi');
+      const main = f.text || '';
+      const context = f.context || [];
+      const postcode = context.find(c => c.id.startsWith('postcode'))?.text || '';
+      const city = context.find(c => c.id.startsWith('place'))?.text || '';
+      const sub = [postcode, city].filter(Boolean).join(' ');
+      const label = f.place_name || main;
+      const item = { main, sub, label, isPOI };
+      if (isPOI) poiItems.push(item);
+      else addressItems.push(item);
+    });
 
-    if(pois.length){
-      const sec=document.createElement('div');
-      sec.className='sug-section-label';
-      sec.textContent='Gares & Aéroports';
+    // POI en premier, puis adresses
+    const results = [...poiItems, ...addressItems];
+
+    if (poiItems.length > 0) {
+      const sec = document.createElement('div');
+      sec.className = 'sug-section-label';
+      sec.textContent = 'Lieux & établissements';
       sugEl.appendChild(sec);
-      pois.forEach(r=>appendSugItem(r,sugEl,inputEl,key));
+      poiItems.forEach(r => appendSugItem(r, sugEl, inputEl, key));
     }
-
-    if(addresses.length){
-      if(pois.length){
-        const sec=document.createElement('div');
-        sec.className='sug-section-label';
-        sec.textContent='Adresses';
+    if (addressItems.length > 0) {
+      if (poiItems.length > 0) {
+        const sec = document.createElement('div');
+        sec.className = 'sug-section-label';
+        sec.textContent = 'Adresses';
         sugEl.appendChild(sec);
       }
-      addresses.slice(0,5-pois.length).forEach(r=>appendSugItem(r,sugEl,inputEl,key));
+      addressItems.forEach(r => appendSugItem(r, sugEl, inputEl, key));
     }
-
     sugEl.classList.add('open');
-  }catch(e){closeSug(sugEl);}
+  } catch(e) { closeSug(sugEl); }
 }
-
 function appendSugItem(r,sugEl,inputEl,key){
   const el=document.createElement('div');
   el.className='suggestion-item'+(r.isPOI?' is-poi':'');
