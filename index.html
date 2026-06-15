@@ -778,7 +778,7 @@ function showConfirmation(payload){
     {label:'Prestation',value:payload.type_prestation},{label:'Véhicule',value:payload.type_vehicule},
     {label:'Véhicules',value:payload.nb_vehicules},{label:'Passagers',value:payload.nb_passagers},
     {label:'Départ',value:payload.adresse_depart},
-    {label:isMad?'Durée':'Arrivée',value:payload.adresse_arrivee},
+    {label:isMad?'Durée':'Arrivée',value:isMad?payload.duree_mad:payload.adresse_arrivee},
     {label:'Date & heure',value:payload.date_heure_display},
   ];
   if(payload.num_vol_train)rows.push({label:'Vol / Train',value:payload.num_vol_train});
@@ -874,7 +874,7 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
       ['Nombre de véhicules', p.nb_vehicules],
       ['Nombre de passagers', p.nb_passagers],
       ['Départ', p.adresse_depart],
-      [isMad ? 'Durée' : 'Arrivée', p.adresse_arrivee],
+      [isMad ? 'Durée' : 'Arrivée', isMad ? p.duree_mad : p.adresse_arrivee],
       ['Date & heure', p.date_heure_display],
       ...(p.num_vol_train ? [['Vol / Train', p.num_vol_train]] : []),
       ...(p.grandes_valises ? [['Grandes valises', p.grandes_valises]] : []),
@@ -894,7 +894,7 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
       ['Nb passagers', p.nb_passagers, false],
       ['Date & heure', p.date_heure_display, false],
       ['Départ', p.adresse_depart, false],
-      [isMad ? 'Durée' : 'Arrivée', p.adresse_arrivee, false],
+      [isMad ? 'Durée' : 'Arrivée', isMad ? p.duree_mad : p.adresse_arrivee, false],
       ...(p.num_vol_train ? [['Vol / Train', p.num_vol_train, false]] : []),
       ...(p.grandes_valises ? [['Grandes valises', p.grandes_valises, false]] : []),
       ...(p.petites_valises ? [['Petites valises', p.petites_valises, false]] : []),
