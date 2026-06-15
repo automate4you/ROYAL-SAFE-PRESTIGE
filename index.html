@@ -458,7 +458,7 @@ async function loadClient(){
     const data=await res.json();
     clientRecord=data;
     const nom=data.fields?.['Nom du client']||'';
-    clientEmail=data.fields?.[CHAMP_EMAIL_CLIENT]||null;
+    clientEmail=data.fields?.['Adresse mail']||null;
     if(nom){
       // Affiche le message de bienvenue
       const greet=document.getElementById('client-greeting');
