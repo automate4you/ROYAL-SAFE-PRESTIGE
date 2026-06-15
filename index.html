@@ -565,7 +565,7 @@ async function fetchAddr(query, sugEl, inputEl, key) {
   sugEl.classList.add('open');
   try {
     // Mapbox Geocoding — couvre adresses ET POI (hôtels, restaurants, monuments...)
-    const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&language=fr&country=fr&limit=5&types=address,poi,place,locality`;
+    const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&language=fr&country=fr&limit=5&types=address,poi`;
     const res = await fetch(mapboxUrl);
     const data = await res.json();
     const features = data.features || [];
