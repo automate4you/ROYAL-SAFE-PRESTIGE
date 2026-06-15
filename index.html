@@ -442,7 +442,9 @@ const CHAMP_NOM_CLIENT='fldlfhXnhxHa2Y6yN';
 // ── LECTURE PARAMÈTRES URL ────────────────────────────────
 const urlParams=new URLSearchParams(window.location.search);
 const clientId=urlParams.get('client_id')||null;
+const CHAMP_EMAIL_CLIENT='fldVhE2RPnVNI4tZe';
 let clientRecord=null; // sera rempli après le GET
+let clientEmail=null;
 
 // ── CHARGEMENT DU CLIENT ──────────────────────────────────
 async function loadClient(){
@@ -456,6 +458,7 @@ async function loadClient(){
     const data=await res.json();
     clientRecord=data;
     const nom=data.fields?.['Dénomination']||data.fields?.['Nom complet']||data.fields?.['Nom']||data.fields?.[CHAMP_NOM_CLIENT]||'';
+    clientEmail=data.fields?.[CHAMP_EMAIL_CLIENT]||null;
     if(nom){
       // Affiche le message de bienvenue
       const greet=document.getElementById('client-greeting');
@@ -853,6 +856,7 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
     date_heure:dateTimeISO,date_heure_display:`${dateVal} à ${timeVal}`,
     date_demande:nowISO,
     ...(clientId&&{client_id:clientId}),
+    ...(clientEmail&&{client_email:clientEmail}),
     ...(vol&&{num_vol_train:vol}),
     ...(coords&&{coordonnees:coords}),
     ...(extras&&{extra:extras}),
