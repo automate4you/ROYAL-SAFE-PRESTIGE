@@ -421,7 +421,6 @@ textarea.text-input { resize: none; line-height: 1.7; }
 <div class="toast" id="toast"></div>
 
 <script>
-const MAPBOX_TOKEN='pk.eyJ1IjoiaWx5ZXNiNDQ0IiwiYSI6ImNtcWVnNjUybzBoNXAycnI0bGpiNmRtcHQifQ.Mr6ts1yE30hntuvK8e373g';
 const WORKER_URL='https://red-salad-0d0f.ilyesbenmimoun9.workers.dev';
 const AT_BASE='appVoxoLNffEhZvHc';
 const AT_TABLE='tblX2SXNHPRkvgdN9';
@@ -564,9 +563,8 @@ async function fetchAddr(query, sugEl, inputEl, key) {
   sugEl.innerHTML = '<div class="loading-dots">Recherche…</div>';
   sugEl.classList.add('open');
   try {
-    // Mapbox Geocoding — couvre adresses ET POI (hôtels, restaurants, monuments...)
-    const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&language=fr&country=fr&limit=5&types=address,poi`;
-    const res = await fetch(mapboxUrl);
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=fr&bbox=-5.1,41.3,9.6,51.1`;
+    const res = await fetch(url);
     const data = await res.json();
     const features = data.features || [];
 
@@ -577,30 +575,37 @@ async function fetchAddr(query, sugEl, inputEl, key) {
     let poiItems = [], addressItems = [];
 
     features.forEach(f => {
-      const isPOI = f.place_type.includes('poi');
-      const main = f.text || '';
-      const context = f.context || [];
-      const postcode = context.find(c => c.id.startsWith('postcode'))?.text || '';
-      const city = context.find(c => c.id.startsWith('place'))?.text || '';
+      const p = f.properties;
+      const type = p.type || '';
+      const isPOI = !['house', 'street', 'city', 'locality', 'district', 'county', 'state'].includes(type);
+      const name = p.name || '';
+      const street = p.street || '';
+      const postcode = p.postcode || '';
+      const city = p.city || p.town || p.village || '';
+      const main = name || street;
       const sub = [postcode, city].filter(Boolean).join(' ');
-      const label = f.place_name || main;
-      const item = { main, sub, label, isPOI };
-      if (isPOI) poiItems.push(item);
-      else addressItems.push(item);
+      // Construire un label complet
+      const parts = [name, street, postcode, city].filter(Boolean);
+      const label = [...new Set(parts)].join(', ');
+      if (main) {
+        if (isPOI) poiItems.push({ main, sub, label, isPOI: true });
+        else addressItems.push({ main, sub, label, isPOI: false });
+      }
     });
 
-    // POI en premier, puis adresses
-    const results = [...poiItems, ...addressItems];
+    const hasSection = poiItems.length > 0 && addressItems.length > 0;
 
     if (poiItems.length > 0) {
-      const sec = document.createElement('div');
-      sec.className = 'sug-section-label';
-      sec.textContent = 'Lieux & établissements';
-      sugEl.appendChild(sec);
+      if (hasSection) {
+        const sec = document.createElement('div');
+        sec.className = 'sug-section-label';
+        sec.textContent = 'Lieux & établissements';
+        sugEl.appendChild(sec);
+      }
       poiItems.forEach(r => appendSugItem(r, sugEl, inputEl, key));
     }
     if (addressItems.length > 0) {
-      if (poiItems.length > 0) {
+      if (hasSection) {
         const sec = document.createElement('div');
         sec.className = 'sug-section-label';
         sec.textContent = 'Adresses';
