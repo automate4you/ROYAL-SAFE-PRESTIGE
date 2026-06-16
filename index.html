@@ -27,6 +27,7 @@ h1 .gold { color: #b8985a; font-style: normal; }
 .field-label { display: block; font-size: 9px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: #b8985a; margin-bottom: 8px; }
 .radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .radio-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.radio-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
 .radio-opt input { display: none; }
 .radio-face { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 10px; border: 0.5px solid #ddd8cc; background: #faf9f6; cursor: pointer; transition: all 0.18s; font-size: 12px; font-weight: 400; color: #8a8070; letter-spacing: 0.02em; user-select: none; text-align: center; line-height: 1.3; }
 .radio-face:hover { border-color: #c9a96e; color: #1a1814; }
@@ -111,6 +112,10 @@ textarea.text-input { resize: none; line-height: 1.7; }
 .picker-input.field-error { border-color: #c0392b !important; background: #fdf5f5 !important; color: #c0392b; }
 .extras-hint { font-size: 11px; color: #b5afa4; margin-top: 6px; font-weight: 300; }
 .required::after { content: ' *'; color: #b8985a; }
+.stop-item { position: relative; }
+.stop-remove { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #c5bfb2; font-size: 16px; line-height: 1; padding: 4px; z-index: 2; transition: color 0.15s; }
+.stop-remove:hover { color: #c0392b; }
+.stop-item .text-input { padding-left: 34px; padding-right: 32px; }
 .client-greeting {
   display: none;
   font-size: 16px; font-weight: 300; color: #6b6760;
@@ -160,6 +165,7 @@ textarea.text-input { resize: none; line-height: 1.7; }
   .header { margin-bottom: 1.75rem; }
   .ornament-line { width: 28px; }
   .radio-grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .radio-grid-4 { grid-template-columns: 1fr 1fr; gap: 6px; }
   .radio-face { padding: 11px 6px; font-size: 11px; gap: 5px; }
   .radio-pip { width: 5px; height: 5px; }
   .stepper-row { gap: 8px; }
@@ -208,6 +214,7 @@ textarea.text-input { resize: none; line-height: 1.7; }
   .confirm-body { padding: 1.5rem 1rem; }
   /* Véhicules en colonne unique sur très petit écran */
   .radio-grid-3 { grid-template-columns: 1fr; gap: 6px; }
+  .radio-grid-4 { grid-template-columns: 1fr 1fr; gap: 6px; }
   .radio-face { padding: 11px 12px; justify-content: flex-start; }
   .field-label { font-size: 8px; letter-spacing: 0.2em; }
   .confirm-title { font-size: 22px; }
@@ -244,8 +251,9 @@ textarea.text-input { resize: none; line-height: 1.7; }
 
         <div class="field-group">
           <label class="field-label required">Véhicule</label>
-          <div class="radio-grid-3">
-            <label class="radio-opt"><input type="radio" name="vehicule" value="Mercedes Classe E" checked><span class="radio-face" style="flex-direction:column;align-items:center;gap:3px;"><span style="display:flex;align-items:center;gap:8px;"><span class="radio-pip"></span>Classe E</span><span style="font-size:9px;color:#c5bfb2;letter-spacing:.04em;font-weight:300;">3 passagers max</span></span></label>
+          <div class="radio-grid-4">
+            <label class="radio-opt"><input type="radio" name="vehicule" value="Véhicule Standard" checked><span class="radio-face" style="flex-direction:column;align-items:center;gap:3px;"><span style="display:flex;align-items:center;gap:8px;"><span class="radio-pip"></span>Standard</span><span style="font-size:9px;color:#c5bfb2;letter-spacing:.04em;font-weight:300;">3 passagers max</span></span></label>
+            <label class="radio-opt"><input type="radio" name="vehicule" value="Mercedes Classe E"><span class="radio-face" style="flex-direction:column;align-items:center;gap:3px;"><span style="display:flex;align-items:center;gap:8px;"><span class="radio-pip"></span>Classe E</span><span style="font-size:9px;color:#c5bfb2;letter-spacing:.04em;font-weight:300;">3 passagers max</span></span></label>
             <label class="radio-opt"><input type="radio" name="vehicule" value="Mercedes Classe S"><span class="radio-face" style="flex-direction:column;align-items:center;gap:3px;"><span style="display:flex;align-items:center;gap:8px;"><span class="radio-pip"></span>Classe S</span><span style="font-size:9px;color:#c5bfb2;letter-spacing:.04em;font-weight:300;">3 passagers max</span></span></label>
             <label class="radio-opt"><input type="radio" name="vehicule" value="Mercedes Classe V"><span class="radio-face" style="flex-direction:column;align-items:center;gap:3px;"><span style="display:flex;align-items:center;gap:8px;"><span class="radio-pip"></span>Classe V</span><span style="font-size:9px;color:#c5bfb2;letter-spacing:.04em;font-weight:300;">7 passagers max</span></span></label>
           </div>
@@ -289,6 +297,15 @@ textarea.text-input { resize: none; line-height: 1.7; }
                 </div>
               </div>
             </div>
+            <!-- Stops — toujours visibles, transfert ET mise à disposition -->
+            <div id="stops-container"></div>
+            <div style="padding:6px 0 0 0;">
+              <button type="button" id="btn-add-stop" onclick="addStop()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;letter-spacing:0.08em;text-transform:uppercase;color:#b8985a;transition:color 0.15s;">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><line x1="6" y1="1" x2="6" y2="11" stroke="#b8985a" stroke-width="1.5" stroke-linecap="round"/><line x1="1" y1="6" x2="11" y2="6" stroke="#b8985a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Ajouter un stop
+              </button>
+            </div>
+
             <div class="slide-wrap open" id="slide-arrivee">
               <div class="slide-inner">
                 <div class="route-sep"><div class="route-sep-line"></div></div>
@@ -475,6 +492,7 @@ function showToast(msg,isError=false){
 }
 
 const PASSENGER_MAX = {
+  'Véhicule Standard': 3,
   'Mercedes Classe E': 3,
   'Mercedes Classe S': 3,
   'Mercedes Classe V': 7,
@@ -547,7 +565,56 @@ function updateVolTrain(){
   document.getElementById('transport-advisory').style.display=show?'block':'none';
 }
 
-// ── AUTOCOMPLETE HYBRIDE : POI EN PREMIER ─────────────────
+// ── STOPS ─────────────────────────────────────────────────
+let stopCount = 0;
+const stopValues = {};
+
+function addStop() {
+  stopCount++;
+  const idx = stopCount;
+  const container = document.getElementById('stops-container');
+
+  const wrapper = document.createElement('div');
+  wrapper.id = `stop-wrapper-${idx}`;
+
+  wrapper.innerHTML = `
+    <div class="route-sep"><div class="route-sep-line"></div></div>
+    <div class="stop-item autocomplete-wrap" id="wrap-stop-${idx}">
+      <div class="route-dot" style="left:16px;top:50%;transform:translateY(-50%);position:absolute;pointer-events:none;z-index:1;">
+        <svg width="7" height="7" viewBox="0 0 7 7" fill="none"><circle cx="3.5" cy="3.5" r="3" stroke="#c9a96e" stroke-width="1"/></svg>
+      </div>
+      <input class="text-input" type="text" id="input-stop-${idx}" placeholder="Stop ${idx}" autocomplete="off" style="padding-left:34px;padding-right:32px;">
+      <button type="button" class="stop-remove" onclick="removeStop(${idx})" title="Supprimer">×</button>
+      <div class="suggestions" id="sug-stop-${idx}"></div>
+    </div>`;
+
+  container.appendChild(wrapper);
+  stopValues[idx] = '';
+  setupAC(`input-stop-${idx}`, `sug-stop-${idx}`, `stop-${idx}`);
+
+  // Fermer suggestions au clic extérieur
+  document.addEventListener('click', e => {
+    if (!e.target.closest(`#wrap-stop-${idx}`)) {
+      const sug = document.getElementById(`sug-stop-${idx}`);
+      if (sug) closeSug(sug);
+    }
+  });
+}
+
+function removeStop(idx) {
+  const wrapper = document.getElementById(`stop-wrapper-${idx}`);
+  if (wrapper) wrapper.remove();
+  delete stopValues[idx];
+}
+
+function getStopsPayload() {
+  const stops = [];
+  document.querySelectorAll('[id^="input-stop-"]').forEach(input => {
+    const val = input.value.trim();
+    if (val) stops.push(val);
+  });
+  return stops;
+}
 let timers={},activeIdx={depart:-1,arrivee:-1};
 function debounce(fn,d,k){clearTimeout(timers[k]);timers[k]=setTimeout(fn,d);}
 function closeSug(el){el.classList.remove('open');el.innerHTML='';}
@@ -706,7 +773,7 @@ buildCol(document.getElementById('col-minutes'),MINUTES,v=>{selM=v;document.getE
 document.getElementById('time-confirm').addEventListener('click',()=>{if(selH!==null&&selM!==null){document.getElementById('input-time').value=`${selH}:${selM}`;closePicker('time');}});
 
 let selDH=null,selDM=null;
-buildCol(document.getElementById('col-duree-h'),Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')),v=>{selDH=v;document.getElementById('disp-dh').textContent=v;});
+buildCol(document.getElementById('col-duree-h'),Array.from({length:24},(_,i)=>String(i+1).padStart(2,'0')),v=>{selDH=v;document.getElementById('disp-dh').textContent=v;});
 buildCol(document.getElementById('col-duree-m'),MINUTES,v=>{selDM=v;document.getElementById('disp-dm').textContent=v;});
 document.getElementById('duree-confirm').addEventListener('click',()=>{if(selDH!==null&&selDM!==null){document.getElementById('input-duree').value=`${selDH}h${selDM}`;closePicker('duree');}});
 
@@ -805,6 +872,9 @@ document.getElementById('btn-new').addEventListener('click',()=>{
   document.getElementById('btn-minus-p').disabled=true;document.getElementById('btn-plus-p').disabled=false;
   document.getElementById('btn-minus-lg').disabled=true;document.getElementById('btn-plus-lg').disabled=false;
   document.getElementById('btn-minus-sm').disabled=true;document.getElementById('btn-plus-sm').disabled=false;
+  // Reset stops
+  stopCount=0;
+  document.getElementById('stops-container').innerHTML='';
   selectedValues.depart='';selectedValues.arrivee='';
   selH=null;selM=null;selDH=null;selDM=null;
   document.getElementById('slide-vol').classList.remove('open');
@@ -860,6 +930,7 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
     date_demande:nowISO,
     ...(clientId&&{client_id:clientId}),
     ...(clientEmail&&{client_email:clientEmail}),
+    ...(getStopsPayload().length>0&&{stops:getStopsPayload()}),
     ...(vol&&{num_vol_train:vol}),
     ...(coords&&{coordonnees:coords}),
     ...(extras&&{extra:extras}),
@@ -909,6 +980,7 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
     [FIELDS.nb_vehicules]:vehicleCount,[FIELDS.nb_passagers]:passengerCount,
     ...(isMad&&duree&&{[FIELDS.duree_mad]:duree}),
     ...(clientId&&{[FIELDS.client]:[clientId]}),
+    ...(getStopsPayload().length>0&&{'fldCmeOzfkUP1vUr3':getStopsPayload().join('\n')}),
     ...(luggageBigCount>0&&{[FIELDS.grande_valise]:luggageBigCount}),
     ...(luggageSmallCount>0&&{[FIELDS.petite_valise]:luggageSmallCount}),
     ...(extras&&{[FIELDS.extra]:extras}),
