@@ -634,64 +634,73 @@ async function fetchAddr(query, sugEl, inputEl, key) {
   sugEl.innerHTML = '<div class="loading-dots">Recherche…</div>';
   sugEl.classList.add('open');
   try {
-    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=fr&bbox=-5.1,41.3,9.6,51.1`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const features = data.features || [];
+    const [banRes, nomRes] = await Promise.allSettled([
+      fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=4&autocomplete=1`),
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&namedetails=1&limit=5&countrycodes=fr&accept-language=fr`,
+        {headers:{'Accept-Language':'fr','User-Agent':'RoyalSafePrestige/1.0'}})
+    ]);
+
+    // POI Nominatim — transport + hôtels + lieux touristiques
+    const POI_TYPES = ['station','railway','airport','aerodrome','bus_station','ferry_terminal','halt','hotel','hostel','motel','guest_house','attraction','museum','monument','castle','stadium'];
+    function isUsefulPOI(item) {
+      const type = item.type||'', cls = item.class||'';
+      const name = (item.namedetails?.name||item.display_name||'').toLowerCase();
+      const isTransport = POI_TYPES.includes(type)||cls==='railway'||cls==='aeroway'||
+        /\b(gare|aéroport|aeroport|airport|terminal|station)\b/.test(name);
+      const isHotel = cls==='tourism'||cls==='amenity'||['hotel','hostel','motel','guest_house','resort'].includes(type);
+      const isAttraction = cls==='historic'||cls==='leisure'||cls==='sport';
+      return isTransport || isHotel || isAttraction;
+    }
+
+    let pois = [];
+    if (nomRes.status==='fulfilled' && nomRes.value.ok) {
+      const nomData = await nomRes.value.json();
+      pois = nomData.filter(isUsefulPOI).slice(0,3).map(item => {
+        const addr = item.address||{};
+        const name = item.namedetails?.name || item.name || '';
+        const city = addr.city||addr.town||addr.village||'';
+        const postcode = addr.postcode||'';
+        const sub = [postcode, city].filter(Boolean).join(' ');
+        const label = name + (sub ? ', ' + sub : '');
+        return {main: name, sub, label, isPOI: true};
+      }).filter(r => r.main);
+    }
+
+    // Adresses BAN — format propre avec numéro de rue
+    let addresses = [];
+    if (banRes.status==='fulfilled' && banRes.value.ok) {
+      const banData = await banRes.value.json();
+      (banData.features||[]).forEach(f => {
+        const p = f.properties;
+        // Titre : numéro + nom de voie
+        const street = p.name || p.label.split(',')[0];
+        const city = p.city || '';
+        const postcode = p.postcode || '';
+        const sub = [postcode, city].filter(Boolean).join(' ');
+        const dup = pois.some(poi => poi.main.toLowerCase() === street.toLowerCase());
+        if (!dup) addresses.push({main: street, sub, label: p.label, isPOI: false});
+      });
+    }
 
     activeIdx[key] = -1;
-    if (!features.length) { closeSug(sugEl); return; }
-
+    if (!pois.length && !addresses.length) { closeSug(sugEl); return; }
     sugEl.innerHTML = '';
-    let poiItems = [], addressItems = [];
 
-    features.forEach(f => {
-      const p = f.properties;
-      const type = p.type || '';
-      const isPOI = !['house', 'street', 'city', 'locality', 'district', 'county', 'state'].includes(type);
-      const housenumber = p.housenumber || '';
-      const name = p.name || '';
-      const street = p.street || '';
-      const postcode = p.postcode || '';
-      const city = p.city || p.town || p.village || '';
-
-      // Pour une adresse : "23 Rue de Belleville" — pour un POI : nom du lieu
-      let main, label;
-      if (!isPOI) {
-        // Adresse : numéro + rue
-        main = [housenumber, street].filter(Boolean).join(' ') || name;
-        const sub = [postcode, city].filter(Boolean).join(' ');
-        label = [housenumber, street, postcode, city].filter(Boolean).join(', ');
-        if (main) addressItems.push({ main, sub, label, isPOI: false });
-      } else {
-        // POI : nom + adresse en sous-titre
-        main = name;
-        const streetFull = [housenumber, street].filter(Boolean).join(' ');
-        const sub = [streetFull, postcode, city].filter(Boolean).join(', ');
-        label = [name, streetFull, postcode, city].filter(Boolean).join(', ');
-        if (main) poiItems.push({ main, sub, label, isPOI: true });
-      }
-    });
-
-    const hasSection = poiItems.length > 0 && addressItems.length > 0;
-
-    if (poiItems.length > 0) {
-      if (hasSection) {
-        const sec = document.createElement('div');
-        sec.className = 'sug-section-label';
-        sec.textContent = 'Lieux & établissements';
-        sugEl.appendChild(sec);
-      }
-      poiItems.forEach(r => appendSugItem(r, sugEl, inputEl, key));
+    if (pois.length) {
+      const sec = document.createElement('div');
+      sec.className = 'sug-section-label';
+      sec.textContent = 'Lieux & établissements';
+      sugEl.appendChild(sec);
+      pois.forEach(r => appendSugItem(r, sugEl, inputEl, key));
     }
-    if (addressItems.length > 0) {
-      if (hasSection) {
+    if (addresses.length) {
+      if (pois.length) {
         const sec = document.createElement('div');
         sec.className = 'sug-section-label';
         sec.textContent = 'Adresses';
         sugEl.appendChild(sec);
       }
-      addressItems.forEach(r => appendSugItem(r, sugEl, inputEl, key));
+      addresses.slice(0, 5 - pois.length).forEach(r => appendSugItem(r, sugEl, inputEl, key));
     }
     sugEl.classList.add('open');
   } catch(e) { closeSug(sugEl); }
