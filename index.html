@@ -609,9 +609,9 @@ function removeStop(idx) {
 
 function getStopsPayload() {
   const stops = [];
-  document.querySelectorAll('[id^="input-stop-"]').forEach(input => {
+  document.querySelectorAll('[id^="input-stop-"]').forEach((input, i) => {
     const val = input.value.trim();
-    if (val) stops.push(val);
+    if (val) stops.push(`Stop ${i + 1} : ${val}`);
   });
   return stops;
 }
