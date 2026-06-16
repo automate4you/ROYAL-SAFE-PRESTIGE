@@ -649,18 +649,27 @@ async function fetchAddr(query, sugEl, inputEl, key) {
       const p = f.properties;
       const type = p.type || '';
       const isPOI = !['house', 'street', 'city', 'locality', 'district', 'county', 'state'].includes(type);
+      const housenumber = p.housenumber || '';
       const name = p.name || '';
       const street = p.street || '';
       const postcode = p.postcode || '';
       const city = p.city || p.town || p.village || '';
-      const main = name || street;
-      const sub = [postcode, city].filter(Boolean).join(' ');
-      // Construire un label complet
-      const parts = [name, street, postcode, city].filter(Boolean);
-      const label = [...new Set(parts)].join(', ');
-      if (main) {
-        if (isPOI) poiItems.push({ main, sub, label, isPOI: true });
-        else addressItems.push({ main, sub, label, isPOI: false });
+
+      // Pour une adresse : "23 Rue de Belleville" — pour un POI : nom du lieu
+      let main, label;
+      if (!isPOI) {
+        // Adresse : numéro + rue
+        main = [housenumber, street].filter(Boolean).join(' ') || name;
+        const sub = [postcode, city].filter(Boolean).join(' ');
+        label = [housenumber, street, postcode, city].filter(Boolean).join(', ');
+        if (main) addressItems.push({ main, sub, label, isPOI: false });
+      } else {
+        // POI : nom + adresse en sous-titre
+        main = name;
+        const streetFull = [housenumber, street].filter(Boolean).join(' ');
+        const sub = [streetFull, postcode, city].filter(Boolean).join(', ');
+        label = [name, streetFull, postcode, city].filter(Boolean).join(', ');
+        if (main) poiItems.push({ main, sub, label, isPOI: true });
       }
     });
 
