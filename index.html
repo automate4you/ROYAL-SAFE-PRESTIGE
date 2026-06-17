@@ -478,6 +478,7 @@ const CHAMP_EMAIL_CLIENT='fldVhE2RPnVNI4tZe';
 let clientRecord=null;
 let clientEmail=null;
 let clientEmails=[];
+let clientPhone=null;
 
 // ── CHARGEMENT DU CLIENT ──────────────────────────────────
 async function loadClient(){
@@ -492,6 +493,7 @@ async function loadClient(){
     const rawEmail=data.fields?.['Adresse mail']||'';
     clientEmails=rawEmail.split(',').map(e=>e.trim()).filter(Boolean);
     clientEmail=clientEmails[0]||null;
+    clientPhone=data.fields?.['Téléphone formaté']||null;
     if(nom){
       const greet=document.getElementById('client-greeting');
       if(greet){ greet.textContent=`Bonjour ${nom},`; greet.style.display='block'; }
@@ -926,7 +928,7 @@ document.getElementById('btn-new').addEventListener('click',()=>{
   // Reset email selector
   document.getElementById('email-selector-group').style.display='none';
   document.getElementById('email-checkboxes').innerHTML='';
-  clientEmails=[];clientEmail=null;
+  clientEmails=[];clientEmail=null;clientPhone=null;
   selectedValues.depart='';selectedValues.arrivee='';
   selH=null;selM=null;selDH=null;selDM=null;
   document.getElementById('slide-vol').classList.remove('open');
@@ -981,6 +983,7 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
     date_heure:dateTimeISO,date_heure_display:`${dateVal} à ${timeVal}`,
     date_demande:nowISO,
     ...(clientId&&{client_id:clientId}),
+    ...(clientPhone&&{client_phone:clientPhone}),
     ...(()=>{
       const checked=[...document.querySelectorAll('input[name="email-confirm"]:checked')].map(i=>i.value);
       return checked.length>0?{emails_confirmation:checked}:{};
