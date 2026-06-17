@@ -121,6 +121,15 @@ textarea.text-input { resize: none; line-height: 1.7; }
   font-size: 16px; font-weight: 300; color: #6b6760;
   letter-spacing: 0.04em; margin-top: 8px;
 }
+.email-selector { margin-top: 10px; display: none; }
+.email-selector-label { font-size: 9px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: #b8985a; margin-bottom: 8px; display: block; }
+.email-checkbox-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 0.5px solid #ddd8cc; background: #faf9f6; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+.email-checkbox-item:hover { border-color: #c9a96e; }
+.email-checkbox-item input[type="checkbox"] { display: none; }
+.email-checkbox-box { width: 14px; height: 14px; border: 1px solid #c9c0ac; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.email-checkbox-item input:checked ~ .email-checkbox-box { background: #b8985a; border-color: #b8985a; }
+.email-checkbox-item input:checked ~ .email-checkbox-box::after { content: ''; display: block; width: 8px; height: 5px; border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(-45deg) translateY(-1px); }
+.email-checkbox-addr { font-size: 13px; font-weight: 300; color: #1a1814; }
 .divider-ornament { display: flex; align-items: center; gap: 12px; margin: 2rem 0; }
 .div-line { flex: 1; height: 0.5px; background: #eae5db; }
 .div-diamond { width: 4px; height: 4px; background: #c9a96e; transform: rotate(45deg); flex-shrink: 0; }
@@ -362,6 +371,13 @@ textarea.text-input { resize: none; line-height: 1.7; }
         <div class="field-group">
           <label class="field-label required">Coordonnées du passager</label>
           <textarea class="text-input" id="input-coords" rows="3" placeholder="Nom, prénom, téléphone, email…" style="min-height:80px;max-height:140px;"></textarea>
+
+        </div>
+
+        <div class="field-group" id="email-selector-group" style="display:none;">
+          <label class="field-label">Envoyer la confirmation à</label>
+          <div id="email-checkboxes"></div>
+        </div>
         </div>
 
         <div class="field-group">
@@ -461,26 +477,42 @@ const CHAMP_NOM_CLIENT='fldacyNcM105hRH19';
 const urlParams=new URLSearchParams(window.location.search);
 const clientId=urlParams.get('client_id')||null;
 const CHAMP_EMAIL_CLIENT='fldVhE2RPnVNI4tZe';
-let clientRecord=null; // sera rempli après le GET
+let clientRecord=null;
 let clientEmail=null;
+let clientEmails=[];
 
 // ── CHARGEMENT DU CLIENT ──────────────────────────────────
 async function loadClient(){
   if(!clientId) return;
   try{
-    const res=await fetch(
-      `${WORKER_URL}/client?id=${clientId}`,
-      {}
-    );
+    const res=await fetch(`${WORKER_URL}/client?id=${clientId}`,{});
     if(!res.ok) return;
     const data=await res.json();
     clientRecord=data;
     const nom=data.fields?.['Nom du client']||'';
-    clientEmail=data.fields?.['Adresse mail']||null;
+    // Parser les emails — gère virgule avec/sans espace
+    const rawEmail=data.fields?.['Adresse mail']||'';
+    clientEmails=rawEmail.split(',').map(e=>e.trim()).filter(Boolean);
+    clientEmail=clientEmails[0]||null;
     if(nom){
-      // Affiche le message de bienvenue
       const greet=document.getElementById('client-greeting');
       if(greet){ greet.textContent=`Bonjour ${nom},`; greet.style.display='block'; }
+    }
+    // Afficher les checkboxes si au moins un email
+    if(clientEmails.length>0){
+      const group=document.getElementById('email-selector-group');
+      const container=document.getElementById('email-checkboxes');
+      container.innerHTML='';
+      clientEmails.forEach((email,i)=>{
+        const lbl=document.createElement('label');
+        lbl.className='email-checkbox-item';
+        lbl.innerHTML=`
+          <input type="checkbox" name="email-confirm" value="${email}" ${i===0?'checked':''}>
+          <span class="email-checkbox-box"></span>
+          <span class="email-checkbox-addr">${email}</span>`;
+        container.appendChild(lbl);
+      });
+      if(group) group.style.display='block';
     }
   }catch(e){ console.warn('Client load failed',e); }
 }
@@ -893,6 +925,10 @@ document.getElementById('btn-new').addEventListener('click',()=>{
   // Reset stops
   stopCount=0;
   document.getElementById('stops-container').innerHTML='';
+  // Reset email selector
+  document.getElementById('email-selector-group').style.display='none';
+  document.getElementById('email-checkboxes').innerHTML='';
+  clientEmails=[];clientEmail=null;
   selectedValues.depart='';selectedValues.arrivee='';
   selH=null;selM=null;selDH=null;selDM=null;
   document.getElementById('slide-vol').classList.remove('open');
@@ -947,7 +983,10 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
     date_heure:dateTimeISO,date_heure_display:`${dateVal} à ${timeVal}`,
     date_demande:nowISO,
     ...(clientId&&{client_id:clientId}),
-    ...(clientEmail&&{client_email:clientEmail}),
+    ...(()=>{
+      const checked=[...document.querySelectorAll('input[name="email-confirm"]:checked')].map(i=>i.value);
+      return checked.length>0?{emails_confirmation:checked}:{};
+    })(),
     ...(getStopsPayload().length>0&&{stops:getStopsPayload()}),
     ...(vol&&{num_vol_train:vol}),
     ...(coords&&{coordonnees:coords}),
