@@ -983,6 +983,23 @@ document.getElementById('btn-submit').addEventListener('click',async()=>{
   if(!timeVal){ document.getElementById('input-time').classList.add('field-error'); errors.push('heure'); }
   if(!coords){ document.getElementById('input-coords').classList.add('field-error'); errors.push('coordonnées'); }
 
+  // Vérification date/heure dans le passé
+  if(dateVal && timeVal){
+    const[dd,mm,yyyy]=dateVal.split('/');
+    const isDST=new Date(`${yyyy}-${mm}-${dd}`).getTimezoneOffset()<new Date(parseInt(yyyy),0,1).getTimezoneOffset();
+    const parisOffsetMs=isDST?2*60*60*1000:1*60*60*1000;
+    const selectedDate=new Date(`${yyyy}-${mm}-${dd}T${timeVal}:00`);
+    const selectedParis=new Date(selectedDate.getTime()-selectedDate.getTimezoneOffset()*60000+parisOffsetMs);
+    const nowParis=new Date(new Date().getTime()+parisOffsetMs-(new Date().getTimezoneOffset()*60000));
+    if(selectedParis<=nowParis){
+      document.getElementById('input-date').classList.add('field-error');
+      document.getElementById('input-time').classList.add('field-error');
+      errors.push('datetime-past');
+      showToast('La date et l\'heure sélectionnées sont déjà passées.',true);
+      return;
+    }
+  }
+
   if(errors.length>0){
     showToast('Certains champs obligatoires sont manquants.',true);
     // Scroll vers le premier champ en erreur
