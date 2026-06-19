@@ -820,7 +820,29 @@ function buildCol(colEl,items,onSelect){
 let selH=null,selM=null;
 buildCol(document.getElementById('col-hours'),Array.from({length:24},(_,i)=>String(i).padStart(2,'0')),v=>{selH=v;document.getElementById('disp-h').textContent=v;});
 buildCol(document.getElementById('col-minutes'),MINUTES,v=>{selM=v;document.getElementById('disp-m').textContent=v;});
-document.getElementById('time-confirm').addEventListener('click',()=>{if(selH!==null&&selM!==null){document.getElementById('input-time').value=`${selH}:${selM}`;closePicker('time');}});
+document.getElementById('time-confirm').addEventListener('click',()=>{
+  if(selH!==null&&selM!==null){
+    // Vérifie si la date sélectionnée est aujourd'hui
+    const dateVal=document.getElementById('input-date').value.trim();
+    if(dateVal){
+      const[dd,mm,yyyy]=dateVal.split('/');
+      const selectedDate=new Date(parseInt(yyyy),parseInt(mm)-1,parseInt(dd));
+      const today=new Date();today.setHours(0,0,0,0);
+      if(selectedDate.getTime()===today.getTime()){
+        // C'est aujourd'hui — vérifier que l'heure n'est pas passée
+        const now=new Date();
+        const selectedMinutes=parseInt(selH)*60+parseInt(selM);
+        const nowMinutes=now.getHours()*60+now.getMinutes();
+        if(selectedMinutes<=nowMinutes){
+          showToast("L'heure sélectionnée est déjà passée.",true);
+          return;
+        }
+      }
+    }
+    document.getElementById('input-time').value=`${selH}:${selM}`;
+    closePicker('time');
+  }
+});
 
 let selDH=null,selDM=null;
 buildCol(document.getElementById('col-duree-h'),Array.from({length:24},(_,i)=>String(i+1).padStart(2,'0')),v=>{selDH=v;document.getElementById('disp-dh').textContent=v;});
